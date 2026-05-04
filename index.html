@@ -152,123 +152,185 @@
     </div>
 
 <script>
-    let vehicles = [], crew = [], kits = [], hardware = [], operationalLogs = [];
-    let currentSection = 'fleet';
+   let vehicles = [], crew = [], kits = [], hardware = [], operationalLogs = [];
+let currentSection = 'fleet';
 
-    window.onload = () => { loadData(); renderAll(); };
+window.onload = () => { loadData(); renderAll(); };
 
-    function toggleMenu() { document.getElementById('sidebar').classList.toggle('open'); }
+// MOBILE NAV LOGIC
+function toggleMenu() {
+    const sidebar = document.getElementById('sidebar');
+    sidebar.classList.toggle('open');
+}
 
-    function saveData() { localStorage.setItem('rescueLogPro_Data', JSON.stringify({ vehicles, crew, kits, hardware, operationalLogs })); }
+function showSec(sec) {
+    currentSection = sec;
+    document.getElementById('view-title').innerText = sec.toUpperCase();
+    document.querySelectorAll('section').forEach(s => s.classList.add('hidden'));
+    document.getElementById(`sec-${sec}`).classList.remove('hidden');
+    
+    document.querySelectorAll('.nav-item').forEach(n => 
+        n.classList.toggle('active', n.innerText.toLowerCase().includes(sec))
+    );
 
-    function loadData() {
-        const saved = localStorage.getItem('rescueLogPro_Data');
-        if (saved) {
-            const parsed = JSON.parse(saved);
-            vehicles = parsed.vehicles || []; crew = parsed.crew || [];
-            kits = parsed.kits || []; hardware = parsed.hardware || [];
-            operationalLogs = parsed.operationalLogs || [];
-        } else {
-            vehicles = [{ id: 'V1', name: 'SQUAD-01', plate: 'CRS-2026' }];
-            crew = [{ id: 'C1', name: 'Lead Tech', role: 'Vertical Lead', status: 'Standby' }];
-            hardware = [{ id: 'H1', name: 'Edelrid Vertic II', expiry: '2026-05' }];
-            kits = [{ id: 'K1', name: 'Main Rope Kit', items: ['Edelrid Vertic II'] }];
-            saveData();
-        }
+    const sidebar = document.getElementById('sidebar');
+    if (sidebar.classList.contains('open')) sidebar.classList.remove('open');
+    
+    renderAll();
+}
+
+// DATA PERSISTENCE
+function saveData() { 
+    localStorage.setItem('rescueLogPro_Data', JSON.stringify({ vehicles, crew, kits, hardware, operationalLogs })); 
+}
+
+function loadData() {
+    const saved = localStorage.getItem('rescueLogPro_Data');
+    if (saved) {
+        const parsed = JSON.parse(saved);
+        vehicles = parsed.vehicles || []; 
+        crew = parsed.crew || [];
+        kits = parsed.kits || []; 
+        hardware = parsed.hardware || [];
+        operationalLogs = parsed.operationalLogs || [];
+    } else {
+        // Initial Default Data
+        vehicles = [{ id: 'V1', name: 'SQUAD-01', plate: 'CRS-2026' }];
+        crew = [{ id: 'C1', name: 'Lead Tech', role: 'Vertical Lead', status: 'Standby' }];
+        hardware = [{ id: 'H1', name: 'Edelrid Vertic II', expiry: '2026-05' }];
+        kits = [{ id: 'K1', name: 'Main Rope Kit', items: ['Edelrid Vertic II'] }];
+        saveData();
     }
+}
 
-    function quickStatus(id, newStatus) {
-        const member = crew.find(x => x.id === id);
-        if (member) {
-            member.status = newStatus;
-            operationalLogs.unshift({ time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), name: member.name, action: newStatus });
-            saveData(); renderAll();
-        }
+// MODAL HANDLING (FIXED)
+function openModal(id) { document.getElementById(id).style.display = 'block'; }
+function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+
+function handleModalSubmit() {
+    const v1 = document.getElementById('input1').value.trim();
+    const v2 = document.getElementById('input2').value.trim();
+    if(!v1) return;
+    
+    const newId = Date.now().toString();
+    
+    if(currentSection === 'fleet') vehicles.push({ id: 'V'+newId, name: v1, plate: v2 });
+    if(currentSection === 'crew') crew.push({ id: 'C'+newId, name: v1, role: v2, status: 'Standby' });
+    if(currentSection === 'hardware') hardware.push({ id: 'H'+newId, name: v1, expiry: v2 });
+    if(currentSection === 'kits') kits.push({ id: 'K'+newId, name: v1, items: [] });
+    
+    // Clear inputs for next time
+    document.getElementById('input1').value = '';
+    document.getElementById('input2').value = '';
+    
+    saveData(); 
+    closeModal('vModal'); 
+    renderAll();
+}
+
+// DELETE LOGIC (RESTORED)
+function deleteEntry(type, id) {
+    if(!confirm("Confirm Removal?")) return;
+    
+    if(type === 'fleet') vehicles = vehicles.filter(x => x.id !== id);
+    if(type === 'crew') crew = crew.filter(x => x.id !== id);
+    if(type === 'hardware') {
+        const item = hardware.find(x => x.id === id);
+        if(item) kits.forEach(k => k.items = k.items.filter(i => i !== item.name));
+        hardware = hardware.filter(x => x.id !== id);
     }
+    if(type === 'kits') kits = kits.filter(x => x.id !== id);
+    
+    saveData(); 
+    renderAll();
+}
 
-    function renderCrew() {
-        const grid = document.getElementById('crewGrid');
-        grid.innerHTML = crew.map(c => `
-            <div class="card">
-                <div style="display: flex; justify-content: space-between; align-items: start;">
-                    <div><h3>${c.name}</h3><span style="font-size:0.8rem; color:#777">${c.role}</span></div>
-                    <div class="status-pill" style="color:${getStatusColor(c.status)}; border-color:${getStatusColor(c.status)}">${c.status}</div>
-                </div>
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 15px;">
-                    <button class="btn-sm" onclick="quickStatus('${c.id}', 'Departing HQ')">🚀 DEP</button>
-                    <button class="btn-sm" onclick="quickStatus('${c.id}', 'On Scene')">📍 SCN</button>
-                    <button class="btn-sm" onclick="quickStatus('${c.id}', 'RTB')">🚒 RTB</button>
-                    <button class="btn-sm" onclick="quickStatus('${c.id}', 'Standby')">💤 STB</button>
-                </div>
-            </div>`).join('');
-    }
-
-    function renderHardware() {
-        const list = document.getElementById('hardwareList');
-        list.innerHTML = hardware.map(h => `
-            <div class="item-row" style="border-left: 4px solid var(--safety-orange)">
-                <span>${h.name} <br><small style="color:#666">EXP: ${h.expiry}</small></span>
-                <button class="btn-sm" style="background:transparent; color:#444" onclick="deleteEntry('hardware', '${h.id}')">🗑️</button>
-            </div>`).join('');
-    }
-
-    function renderFleet() {
-        const grid = document.getElementById('fleetGrid');
-        grid.innerHTML = vehicles.map(v => `<div class="card"><h3>${v.name}</h3><span style="color:#666">${v.plate}</span></div>`).join('');
-    }
-
-    function renderLog() {
-        document.getElementById('opsLog').innerHTML = operationalLogs.map(l => `<div>[${l.time}] ${l.name}: ${l.action}</div>`).join('') || "No logs.";
-    }
-
-    function renderKits() {
-        const grid = document.getElementById('kitGrid');
-        grid.innerHTML = kits.map(k => `
-            <div class="card">
-                <h3>${k.name}</h3>
-                <div style="margin: 10px 0;">
-                    ${k.items.map(i => `<div class="item-row" style="padding:8px"><span>${i}</span></div>`).join('')}
-                </div>
-                <select onchange="addToKit('${k.id}', this.value); this.value='';">
-                    <option value="">+ Add Gear</option>
-                    ${hardware.map(h => `<option value="${h.name}">${h.name}</option>`).join('')}
-                </select>
-            </div>`).join('');
-    }
-
-    function showSec(sec) {
-        currentSection = sec;
-        document.getElementById('view-title').innerText = sec.toUpperCase();
-        document.querySelectorAll('section').forEach(s => s.classList.add('hidden'));
-        document.getElementById(`sec-${sec}`).classList.remove('hidden');
-        document.querySelectorAll('.nav-item').forEach(n => n.classList.toggle('active', n.innerText.toLowerCase().includes(sec)));
-        if(window.innerWidth < 768) toggleMenu();
-        renderAll();
-    }
-
-    function renderAll() { renderFleet(); renderCrew(); renderHardware(); renderKits(); renderLog(); }
-    function openModal(id) { document.getElementById(id).style.display = 'block'; }
-    function closeModal(id) { document.getElementById(id).style.display = 'none'; }
-    function getStatusColor(s) { return s === 'On Scene' ? 'var(--danger)' : s === 'Standby' ? 'var(--success)' : 'var(--safety-orange)'; }
-    function addToKit(kitId, item) { const k = kits.find(x => x.id === kitId); if (k && !k.items.includes(item)) { k.items.push(item); saveData(); renderAll(); } }
-
-    function handleModalSubmit() {
-        const v1 = document.getElementById('input1').value.trim();
-        const v2 = document.getElementById('input2').value.trim();
-        if(!v1) return;
-        const newId = Date.now().toString();
-        if(currentSection === 'fleet') vehicles.push({ id: 'V'+newId, name: v1, plate: v2 });
-        if(currentSection === 'crew') crew.push({ id: 'C'+newId, name: v1, role: v2, status: 'Standby' });
-        if(currentSection === 'hardware') hardware.push({ id: 'H'+newId, name: v1, expiry: v2 });
-        if(currentSection === 'kits') kits.push({ id: 'K'+newId, name: v1, items: [] });
-        saveData(); closeModal('vModal'); renderAll();
-    }
-
-    function deleteEntry(type, id) {
-        if(!confirm("Delete?")) return;
-        if(type === 'hardware') hardware = hardware.filter(x => x.id !== id);
+// STATUS & LOGS
+function quickStatus(id, newStatus) {
+    const member = crew.find(x => x.id === id);
+    if (member) {
+        member.status = newStatus;
+        operationalLogs.unshift({ 
+            time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), 
+            name: member.name, 
+            action: newStatus 
+        });
         saveData(); renderAll();
     }
+}
+
+function getStatusColor(s) { 
+    return s === 'On Scene' ? 'var(--danger)' : s === 'Standby' ? 'var(--success)' : 'var(--safety-orange)'; 
+}
+
+// RENDER FUNCTIONS (ADDED DELETE BUTTONS TO ALL CARDS)
+function renderFleet() {
+    const grid = document.getElementById('fleetGrid');
+    grid.innerHTML = vehicles.map(v => `
+        <div class="card">
+            <div style="display:flex; justify-content:space-between">
+                <h3>${v.name}</h3>
+                <button class="btn-sm" onclick="deleteEntry('fleet', '${v.id}')">🗑️</button>
+            </div>
+            <span style="color:#666">${v.plate}</span>
+        </div>`).join('');
+}
+
+function renderCrew() {
+    const grid = document.getElementById('crewGrid');
+    grid.innerHTML = crew.map(c => `
+        <div class="card">
+            <div style="display: flex; justify-content: space-between; align-items: start;">
+                <div><h3>${c.name}</h3><span style="font-size:0.8rem; color:#777">${c.role}</span></div>
+                <button class="btn-sm" style="background:transparent" onclick="deleteEntry('crew', '${c.id}')">🗑️</button>
+            </div>
+            <div class="status-pill" style="margin-top:10px; display:inline-block; color:${getStatusColor(c.status)}; border-color:${getStatusColor(c.status)}">${c.status}</div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 15px;">
+                <button class="btn-sm" onclick="quickStatus('${c.id}', 'Departing HQ')">🚀 DEP</button>
+                <button class="btn-sm" onclick="quickStatus('${c.id}', 'On Scene')">📍 SCN</button>
+                <button class="btn-sm" onclick="quickStatus('${c.id}', 'RTB')">🚒 RTB</button>
+                <button class="btn-sm" onclick="quickStatus('${c.id}', 'Standby')">💤 STB</button>
+            </div>
+        </div>`).join('');
+}
+
+function renderHardware() {
+    const list = document.getElementById('hardwareList');
+    list.innerHTML = hardware.map(h => `
+        <div class="item-row" style="border-left: 4px solid var(--safety-orange)">
+            <span>${h.name} <br><small style="color:#666">EXP: ${h.expiry}</small></span>
+            <button class="btn-sm" style="background:transparent" onclick="deleteEntry('hardware', '${h.id}')">🗑️</button>
+        </div>`).join('');
+}
+
+function renderKits() {
+    const grid = document.getElementById('kitGrid');
+    grid.innerHTML = kits.map(k => `
+        <div class="card">
+            <div style="display:flex; justify-content:space-between">
+                <h3>${k.name}</h3>
+                <button class="btn-sm" onclick="deleteEntry('kits', '${k.id}')">🗑️</button>
+            </div>
+            <div style="margin: 10px 0;">
+                ${k.items.map(i => `<div class="item-row" style="padding:8px"><span>${i}</span></div>`).join('')}
+            </div>
+            <select onchange="addToKit('${k.id}', this.value); this.value='';">
+                <option value="">+ Add Gear</option>
+                ${hardware.map(h => `<option value="${h.name}">${h.name}</option>`).join('')}
+            </select>
+        </div>`).join('');
+}
+
+function renderLog() {
+    document.getElementById('opsLog').innerHTML = operationalLogs.map(l => `<div>[${l.time}] ${l.name}: ${l.action}</div>`).join('') || "No logs.";
+}
+
+function addToKit(kitId, item) { 
+    const k = kits.find(x => x.id === kitId); 
+    if (k && !k.items.includes(item)) { k.items.push(item); saveData(); renderAll(); } 
+}
+
+function renderAll() { renderFleet(); renderCrew(); renderHardware(); renderKits(); renderLog(); }
 </script>
 </body>
 </html>
