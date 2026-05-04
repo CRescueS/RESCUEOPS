@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RescueLog Pro | Casino Rescue Squad</title>
+    <style>
+        :root {
+            --safety-orange: #FF6B00;
+            --safety-yellow: #FFD700;
+            --dark-bg: #0a0a0a;
+            --sidebar-bg: #000000;
+            --card-bg: rgba(26, 26, 26, 0.9);
+            --text-main: #FFFFFF;
+            --danger: #FF4444;
+            --success: #00C851;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--dark-bg);
+            color: var(--text-main);
+            margin: 0;
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* Fixed Squad Patch Watermark */
+        #watermark {
+            position: fixed;
+            top: 50%;
+            left: 55%; /* Slightly offset to center visually against the sidebar */
+            transform: translate(-50%, -50%);
+            width: 700px;
+            height: 700px;
+            background-image: url('1121.jpg'); /* Verbatim file reference */
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
+            opacity: 0.12; /* Increased for better visibility */
+            pointer-events: none;
+            z-index: -1; 
+        }
+
+        .sidebar {
+            width: 260px;
+            background: var(--sidebar-bg);
+            border-right: 1px solid #333;
+            display: flex;
+            flex-direction: column;
+            z-index: 10;
+        }
+        .nav-brand { padding: 25px 20px; font-weight: 800; color: var(--safety-orange); letter-spacing: 1px; border-bottom: 1px solid #222; }
+        .nav-item { padding: 15px 20px; cursor: pointer; color: #888; transition: 0.2s; border-left: 3px solid transparent; }
+        .nav-item:hover, .nav-item.active { color: var(--safety-orange); background: rgba(255, 107, 0, 0.1); border-left-color: var(--safety-orange); }
+
+        .viewport { flex: 1; display: flex; flex-direction: column; overflow: hidden; position: relative; }
+        .top-bar { background: rgba(26, 26, 26, 0.95); padding: 15px 25px; border-bottom: 2px solid var(--safety-orange); display: flex; justify-content: space-between; align-items: center; backdrop-filter: blur(10px); }
+        .main-content { flex: 1; overflow-y: auto; padding: 25px; }
+
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 20px; }
+        .card { background: var(--card-bg); border: 1px solid #333; border-radius: 12px; padding: 20px; backdrop-filter: blur(12px); }
+        .card h3 { margin: 0; color: var(--safety-yellow); font-size: 1.1rem; }
+        .sub-text { font-size: 0.75rem; color: #777; display: block; margin-bottom: 15px; }
+        
+        .item-row { background: #111; padding: 10px; border-radius: 6px; margin-bottom: 6px; display: flex; justify-content: space-between; align-items: center; font-size: 0.85rem; border-left: 4px solid var(--safety-orange); }
+        .expiry-alert { color: var(--danger); font-weight: bold; }
+
+        .status-pill { padding: 4px 10px; border-radius: 20px; font-size: 0.7rem; font-weight: 800; text-transform: uppercase; border: 1px solid; }
+        .btn { background: var(--safety-orange); color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 0.8rem; }
+        .btn-sm { padding: 6px 10px; font-size: 0.7rem; background: #333; border: none; color: white; cursor: pointer; border-radius: 4px; }
+        
+        select, input { background: #000; border: 1px solid #444; color: white; padding: 10px; border-radius: 4px; width: 100%; margin-top: 10px; }
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 100; }
+        .modal-content { background: #1a1a1a; width: 420px; margin: 100px auto; padding: 30px; border-radius: 12px; border: 2px solid var(--safety-orange); }
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+
+    <div id="watermark"></div>
+
+    <div class="sidebar">
+        <div class="nav-brand">CASINO RESCUE SQUAD</div>
+        <div class="nav-item active" onclick="showSec('fleet')">🚑 Fleet Ops</div>
+        <div class="nav-item" onclick="showSec('crew')">👥 Crew Deployment</div>
+        <div class="nav-item" onclick="showSec('hardware')">⚙️ Hardware Log</div>
+        <div class="nav-item" onclick="showSec('kits')">📦 Kit Inventory</div>
+    </div>
+
+    <div class="viewport">
+        <div class="top-bar">
+            <strong id="view-title">OPERATIONAL READINESS</strong>
+            <button class="btn" onclick="openModal('vModal')">+ ADD RESOURCE</button>
+        </div>
+
+        <div class="main-content">
+            <section id="sec-fleet"><div class="grid" id="fleetGrid"></div></section>
+            <section id="sec-crew" class="hidden">
+                <div class="grid" id="crewGrid"></div>
+                <div class="card" style="margin-top: 25px;">
+                    <h3>Mission Timeline</h3>
+                    <div id="opsLog" style="font-family: monospace; font-size: 0.8rem; color: #aaa;"></div>
+                </div>
+            </section>
+            <section id="sec-hardware" class="hidden">
+                <div class="card">
+                    <h3>Hardware Inspection Registry</h3>
+                    <div id="hardwareList"></div>
+                </div>
+            </section>
+            <section id="sec-kits" class="hidden"><div class="grid" id="kitGrid"></div></section>
+        </div>
+    </div>
+
+    <div id="vModal" class="modal">
+        <div class="modal-content">
+            <h3 id="modalTitle">Configuration</h3>
+            <input type="text" id="input1" placeholder="Label / Name">
+            <input type="text" id="input2" placeholder="Detail (Plate/Role/Expiry)">
+            <div style="margin-top: 20px; display: flex; gap: 10px;">
+                <button class="btn" style="flex:1" onclick="handleModalSubmit()">CONFIRM</button>
+                <button class="btn" style="flex:1; background:#444" onclick="closeModal('vModal')">CANCEL</button>
+            </div>
+        </div>
+    </div>
+
+<script>
+    let vehicles = [], crew = [], kits = [], hardware = [], operationalLogs = [];
+    let currentSection = 'fleet';
+
+    window.onload = () => { loadData(); renderAll(); };
+
+    function saveData() { localStorage.setItem('rescueLogPro_Data', JSON.stringify({ vehicles, crew, kits, hardware, operationalLogs })); }
+
+    function loadData() {
+        const saved = localStorage.getItem('rescueLogPro_Data');
+        if (saved) {
+            const parsed = JSON.parse(saved);
+            vehicles = parsed.vehicles || []; crew = parsed.crew || [];
+            kits = parsed.kits || []; hardware = parsed.hardware || [];
+            operationalLogs = parsed.operationalLogs || [];
+        } else {
+            vehicles = [{ id: 'V1', name: 'SQUAD-01', plate: 'CRS-2026' }];
+            crew = [{ id: 'C1', name: 'Lead Tech', role: 'Vertical Lead', status: 'Standby' }];
+            hardware = [{ id: 'H1', name: 'Edelrid Vertic II', expiry: '2026-05' }];
+            kits = [{ id: 'K1', name: 'Primary Vertical Rig', items: ['Edelrid Vertic II'] }];
+            saveData();
+        }
+    }
+
+    function checkKitIntegrity() {
+        let issues = [];
+        kits.forEach(kit => {
+            kit.items.forEach(itemName => {
+                const regItem = hardware.find(h => h.name === itemName);
+                if (regItem) {
+                    const status = getExpiryStatus(regItem.expiry);
+                    if (status.label !== 'SERVICEABLE') issues.push(`${kit.name}: ${itemName} (${status.label})`);
+                }
+            });
+        });
+        return issues;
+    }
+
+    function quickStatus(id, newStatus) {
+        if (newStatus === 'Departing HQ' || newStatus === 'On Scene') {
+            const safetyIssues = checkKitIntegrity();
+            if (safetyIssues.length > 0 && !confirm(`⚠️ DEPLOYMENT WARNING:\n\nExpired/Expiring gear found:\n${safetyIssues.join('\n')}\n\nProceed?`)) return;
+        }
+        const member = crew.find(x => x.id === id);
+        if (member) {
+            member.status = newStatus;
+            operationalLogs.unshift({ time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), name: member.name, action: newStatus });
+            saveData(); renderAll();
+        }
+    }
+
+    function getExpiryStatus(expiryDate) {
+        if(!expiryDate) return { label: 'NO DATE', color: '#666' };
+        const now = new Date(), expiry = new Date(expiryDate), sixMonths = new Date();
+        sixMonths.setMonth(now.getMonth() + 6);
+        if (expiry < now) return { label: 'EXPIRED', color: 'var(--danger)' };
+        if (expiry < sixMonths) return { label: 'EXPIRING SOON', color: 'var(--safety-yellow)' };
+        return { label: 'SERVICEABLE', color: 'var(--success)' };
+    }
+
+    function renderKits() {
+        const grid = document.getElementById('kitGrid');
+        grid.innerHTML = kits.map(k => `
+            <div class="card">
+                <h3>${k.name}</h3>
+                <span class="sub-text">ID: ${k.id}</span>
+                <div style="margin: 10px 0;">
+                    ${k.items.map(i => {
+                        const h = hardware.find(x => x.name === i);
+                        const status = h ? getExpiryStatus(h.expiry) : null;
+                        const alert = (status && status.label !== 'SERVICEABLE') ? `<span class="expiry-alert">⚠️</span>` : '✔️';
+                        return `<div class="item-row"><span>${alert} ${i}</span><span style="color:var(--danger); cursor:pointer" onclick="removeFromKit('${k.id}', '${i}')">✖</span></div>`;
+                    }).join('')}
+                </div>
+                <select onchange="addToKit('${k.id}', this.value); this.value='';">
+                    <option value="">+ Assign Registered Hardware...</option>
+                    ${hardware.map(h => `<option value="${h.name}">${h.name}</option>`).join('')}
+                </select>
+            </div>`).join('');
+    }
+
+    function renderHardware() {
+        const list = document.getElementById('hardwareList');
+        list.innerHTML = hardware.map(h => {
+            const status = getExpiryStatus(h.expiry);
+            return `<div class="item-row" style="border-left-color: ${status.color}">
+                <span>⚙️ ${h.name}</span>
+                <div style="text-align:right">
+                    <span style="font-size: 0.7rem; color: ${status.color}; font-weight: bold; margin-right: 10px;">${status.label}</span>
+                    <button class="btn-sm" onclick="deleteEntry('hardware', '${h.id}')">🗑️</button>
+                </div>
+            </div>`;
+        }).join('');
+    }
+
+    function renderCrew() {
+        const grid = document.getElementById('crewGrid');
+        grid.innerHTML = crew.map(c => `
+            <div class="card">
+                <div style="display: flex; justify-content: space-between; align-items: start;">
+                    <div><h3>${c.name}</h3><span class="sub-text">${c.role}</span></div>
+                    <div class="status-pill" style="color:${getStatusColor(c.status)}; border-color:${getStatusColor(c.status)}">${c.status}</div>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 5px; margin-top: 10px;">
+                    <button class="btn-sm" onclick="quickStatus('${c.id}', 'Departing HQ')">🚀 DEPART</button>
+                    <button class="btn-sm" onclick="quickStatus('${c.id}', 'On Scene')">📍 SCENE</button>
+                    <button class="btn-sm" onclick="quickStatus('${c.id}', 'Departing Scene')">🚒 RETURN</button>
+                    <button class="btn-sm" onclick="quickStatus('${c.id}', 'Standby')">💤 STANDBY</button>
+                </div>
+            </div>`).join('');
+    }
+
+    function renderFleet() {
+        const grid = document.getElementById('fleetGrid');
+        grid.innerHTML = vehicles.map(v => `<div class="card"><h3>${v.name}</h3><span class="sub-text">PLATE: ${v.plate}</span><button class="btn-sm" onclick="deleteEntry('fleet', '${v.id}')">REMOVE</button></div>`).join('');
+    }
+
+    function renderLog() {
+        const log = document.getElementById('opsLog');
+        log.innerHTML = operationalLogs.map(l => `<div>[${l.time}] ${l.name}: ${l.action}</div>`).join('') || "No active logs.";
+    }
+
+    function showSec(sec) {
+        currentSection = sec;
+        document.querySelectorAll('section').forEach(s => s.classList.add('hidden'));
+        document.getElementById(`sec-${sec}`).classList.remove('hidden');
+        document.querySelectorAll('.nav-item').forEach(n => n.classList.toggle('active', n.innerText.toLowerCase().includes(sec)));
+        renderAll();
+    }
+    function renderAll() { renderFleet(); renderCrew(); renderHardware(); renderKits(); renderLog(); }
+    function openModal(id) { document.getElementById(id).style.display = 'block'; }
+    function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+    function getStatusColor(s) { return s === 'On Scene' ? 'var(--danger)' : s === 'Standby' ? 'var(--success)' : 'var(--safety-orange)'; }
+    function addToKit(kitId, item) { const k = kits.find(x => x.id === kitId); if (k && !k.items.includes(item)) { k.items.push(item); saveData(); renderAll(); } }
+    function removeFromKit(kitId, item) { const k = kits.find(x => x.id === kitId); if(k) { k.items = k.items.filter(i => i !== item); saveData(); renderAll(); } }
+    
+    function handleModalSubmit() {
+        const v1 = document.getElementById('input1').value.trim();
+        const v2 = document.getElementById('input2').value.trim();
+        if(!v1) return;
+        const newId = Date.now().toString();
+        if(currentSection === 'fleet') vehicles.push({ id: 'V'+newId, name: v1, plate: v2 });
+        if(currentSection === 'crew') crew.push({ id: 'C'+newId, name: v1, role: v2, status: 'Standby' });
+        if(currentSection === 'hardware') hardware.push({ id: 'H'+newId, name: v1, expiry: v2 });
+        if(currentSection === 'kits') kits.push({ id: 'K'+newId, name: v1, items: [] });
+        saveData(); closeModal('vModal'); renderAll();
+    }
+
+    function deleteEntry(type, id) {
+        if(!confirm("Remove entry?")) return;
+        if(type === 'hardware') {
+            const item = hardware.find(x => x.id === id);
+            if(item) kits.forEach(k => k.items = k.items.filter(i => i !== item.name));
+            hardware = hardware.filter(x => x.id !== id);
+        }
+        if(type === 'fleet') vehicles = vehicles.filter(x => x.id !== id);
+        saveData(); renderAll();
+    }
+</script>
+</body>
+</html>
