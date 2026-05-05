@@ -39,19 +39,22 @@
         .container { padding: 15px; flex: 1; }
 
         .btn-grid { display: grid; grid-template-columns: 1fr; gap: 10px; margin-bottom: 20px; }
-        .log-btn { padding: 20px; border: none; border-radius: 8px; font-weight: 800; font-size: 0.9rem; cursor: pointer; color: #000; text-transform: uppercase; transition: 0.1s; }
+        .log-btn { padding: 15px; border: none; border-radius: 8px; font-weight: 800; font-size: 0.85rem; cursor: pointer; color: #000; text-transform: uppercase; }
         .btn-hq { background: var(--info); }
         .btn-scene { background: var(--safety-orange); }
-        .btn-clear { background: var(--success); }
         .btn-standby { background: #666; color: #fff; }
-        .log-btn:active { transform: scale(0.98); opacity: 0.8; }
-
-        .table-wrap { background: var(--card-bg); border-radius: 8px; overflow-x: auto; border: 1px solid #333; }
-        table { width: 100%; border-collapse: collapse; min-width: 350px; }
-        th { text-align: left; background: #222; padding: 10px; font-size: 0.7rem; color: var(--safety-orange); }
-        td { padding: 12px 10px; border-bottom: 1px solid #222; font-size: 0.85rem; font-family: 'Courier New', monospace; }
         
-        .hidden { display: none; }
+        .table-wrap { background: var(--card-bg); border-radius: 8px; overflow-x: auto; border: 1px solid #333; margin-bottom: 20px; }
+        table { width: 100%; border-collapse: collapse; min-width: 320px; }
+        th { text-align: left; background: #222; padding: 10px; font-size: 0.7rem; color: var(--safety-orange); text-transform: uppercase; }
+        td { padding: 12px 10px; border-bottom: 1px solid #222; font-size: 0.85rem; }
+        
+        .status-pill { height: 10px; width: 10px; border-radius: 50%; display: inline-block; margin-right: 5px; }
+        .hidden { display: none !important; }
+
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 2000; align-items: center; justify-content: center; padding: 20px; }
+        .modal-content { background: #1a1a1a; padding: 20px; border-radius: 8px; border: 1px solid var(--safety-orange); width: 100%; max-width: 400px; }
+        input, select { width: 100%; padding: 12px; background: #000; border: 1px solid #333; color: #fff; margin: 10px 0; border-radius: 4px; box-sizing: border-box; }
     </style>
 </head>
 <body>
@@ -60,11 +63,10 @@
 
 <div id="sidebar" class="sidebar">
     <div class="nav-brand">CASINO RESCUE COMMAND</div>
-    <div class="nav-item" onclick="nav('dash')">📊 Squad Status</div>
-    <div class="nav-item active" onclick="nav('oplog')">⏱️ Operational Log</div>
-    <div class="nav-item" onclick="nav('training')">🧗 Training Log</div>
-    <div class="nav-item" onclick="nav('hardware')">⚙️ Hardware</div>
-    <div class="nav-item" onclick="nav('crew')">👥 Kits</div>
+    <div id="nav-oplog" class="nav-item" onclick="nav('oplog')">⏱️ Operational Log</div>
+    <div id="nav-dash" class="nav-item" onclick="nav('dash')">📊 Squad Status</div>
+    <div id="nav-training" class="nav-item" onclick="nav('training')">🧗 Training Log</div>
+    <div id="nav-crew" class="nav-item" onclick="nav('crew')">👥 Kits</div>
 </div>
 
 <div class="main">
@@ -72,13 +74,11 @@
         <div></div><div></div><div></div>
     </div>
 
-    <div class="header">
-        <h2 id="view-title" style="font-size: 1rem; margin:0;">OPERATIONAL LOG</h2>
-    </div>
+    <div class="header"><h2 id="view-title" style="font-size: 1rem; margin:0;">MISSION COMMAND</h2></div>
 
     <div class="container">
-        <!-- Operational Log View -->
-        <div id="view-oplog">
+        <!-- OPERATIONAL LOG -->
+        <div id="view-oplog" class="hidden">
             <div class="btn-grid">
                 <button class="log-btn btn-hq" onclick="stamp('DEPARTING HQ')">Departing HQ</button>
                 <button class="log-btn btn-scene" onclick="stamp('ON SCENE')">On Scene</button>
@@ -86,25 +86,58 @@
                 <button class="log-btn btn-hq" onclick="stamp('AT HQ / SHUTDOWN')">At HQ / Shutting Down</button>
                 <button class="log-btn btn-standby" onclick="stamp('STANDBY')">Standby</button>
             </div>
-            
             <div class="table-wrap">
                 <table>
-                    <thead><tr><th>Timestamp</th><th>Event Status</th></tr></thead>
+                    <thead><tr><th>Time</th><th>Status</th></tr></thead>
                     <tbody id="op-log-body"></tbody>
                 </table>
             </div>
-            <button onclick="clearOpLog()" style="margin-top:20px; background:none; border:1px solid #444; color:#888; padding:8px; border-radius:4px; width:100%; cursor:pointer;">Clear Mission Log</button>
         </div>
 
-        <!-- Placeholder for other views -->
-        <div id="view-dash" class="hidden"><p>Squad currency and status data.</p></div>
-        <div id="view-training" class="hidden"><p>VR Training logs.</p></div>
-        <div id="view-hardware" class="hidden"><p>Arizona Vortex and gear registry.</p></div>
-        <div id="view-crew" class="hidden"><p>Personal and Vehicle kit breakdowns.</p></div>
+        <!-- SQUAD STATUS -->
+        <div id="view-dash" class="hidden">
+            <button class="log-btn btn-scene" style="width:100%; margin-bottom:15px;" onclick="openCrewModal()">+ ADD OPERATOR</button>
+            <div class="table-wrap">
+                <table>
+                    <thead><tr><th>Callsign</th><th>Currency</th><th>Action</th></tr></thead>
+                    <tbody id="status-body"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- TRAINING LOG -->
+        <div id="view-training" class="hidden">
+            <button class="log-btn btn-hq" style="width:100%; margin-bottom:15px;" onclick="openTrainModal()">+ LOG VR SESSION</button>
+            <div class="table-wrap">
+                <table>
+                    <thead><tr><th>Date</th><th>Op</th><th>Skill</th></tr></thead>
+                    <tbody id="train-log-body"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- CREW KITS -->
+        <div id="view-crew" class="hidden">
+            <div id="kit-content"></div>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL: ADD OPERATOR -->
+<div id="crewModal" class="modal">
+    <div class="modal-content">
+        <h3>Operator Config</h3>
+        <input type="text" id="c-name" placeholder="Full Name">
+        <input type="text" id="c-callsign" placeholder="Callsign">
+        <button class="log-btn btn-scene" style="width:100%" onclick="saveCrew()">SAVE</button>
+        <button class="log-btn btn-standby" style="width:100%; margin-top:10px;" onclick="closeModal('crewModal')">CANCEL</button>
     </div>
 </div>
 
 <script>
+    // Data structures
+    let crew = JSON.parse(localStorage.getItem('rv_crew')) || [{name:"Lead", callsign:"ALPHA"}];
+    let logs = JSON.parse(localStorage.getItem('rv_training')) || [];
     let opLogs = JSON.parse(localStorage.getItem('rv_op_logs')) || [];
 
     function toggleMenu() {
@@ -116,42 +149,66 @@
         document.querySelectorAll('.container > div').forEach(d => d.classList.add('hidden'));
         document.getElementById('view-' + target).classList.remove('hidden');
         document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+        document.getElementById('nav-' + target).classList.add('active');
         if (window.innerWidth <= 768) toggleMenu();
-        document.getElementById('view-title').innerText = target.toUpperCase().replace('OPLOG', 'OPERATIONAL LOG');
+        document.getElementById('view-title').innerText = target.toUpperCase().replace('OPLOG', 'MISSION LOG');
+        render();
+    }
+
+    function openCrewModal() { document.getElementById('crewModal').style.display = 'flex'; }
+    function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+
+    function saveCrew() {
+        const call = document.getElementById('c-callsign').value.toUpperCase();
+        if (['I','T','D','M'].includes(call[0])) return alert("Reserved: Callsign cannot start with Triage letters.");
+        crew.push({ name: document.getElementById('c-name').value, callsign: call });
+        localStorage.setItem('rv_crew', JSON.stringify(crew));
+        closeModal('crewModal');
         render();
     }
 
     function stamp(status) {
         const now = new Date();
-        const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
-        const dateStr = now.toLocaleDateString();
-        
-        opLogs.unshift({ time: `${dateStr} ${timeStr}`, status: status });
+        opLogs.unshift({ time: now.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}), status: status });
         localStorage.setItem('rv_op_logs', JSON.stringify(opLogs));
         render();
     }
 
-    function clearOpLog() {
-        if(confirm("Archive and clear current mission timestamps?")) {
-            opLogs = [];
-            localStorage.setItem('rv_op_logs', JSON.stringify(opLogs));
-            render();
-        }
-    }
-
     function render() {
-        const logBody = document.getElementById('op-log-body');
-        if(logBody) {
-            logBody.innerHTML = opLogs.map(l => `
-                <tr>
-                    <td>${l.time}</td>
-                    <td style="font-weight:bold; color:var(--safety-orange)">${l.status}</td>
-                </tr>
-            `).join('');
-        }
+        const sixMo = new Date(); sixMo.setMonth(sixMo.getMonth() - 6);
+
+        // Render Mission Log
+        document.getElementById('op-log-body').innerHTML = opLogs.map(l => 
+            `<tr><td>${l.time}</td><td style="color:var(--safety-orange); font-weight:bold;">${l.status}</td></tr>`
+        ).join('');
+
+        // Render Status (Currency Tracking)
+        document.getElementById('status-body').innerHTML = crew.map((c, i) => {
+            const hasLog = logs.some(l => l.op === c.callsign && new Date(l.date) > sixMo);
+            return `<tr>
+                <td><strong>${c.callsign}</strong></td>
+                <td><span class="status-pill" style="background:${hasLog ? 'var(--success)' : 'var(--danger)'}"></span>${hasLog ? 'CUR' : 'EXP'}</td>
+                <td><button onclick="removeCrew(${i})" style="background:none; border:none; color:var(--danger);">DEL</button></td>
+            </tr>`;
+        }).join('');
+
+        // Render Training Log
+        document.getElementById('train-log-body').innerHTML = logs.map(l => 
+            `<tr><td>${l.date}</td><td>${l.op}</td><td>${l.skill}</td></tr>`
+        ).join('');
+
+        // Render Kits
+        document.getElementById('kit-content').innerHTML = crew.map(c => `
+            <div class="table-wrap">
+                <div style="padding:10px; background:#222; font-size:0.75rem; color:var(--safety-orange)">${c.callsign} :: KIT CONFIG</div>
+                <table><tr><td>Personal Trauma Module (MARCH)</td></tr><tr><td>Ascent/Descent Mechanicals</td></tr></table>
+            </div>
+        `).join('');
     }
 
-    window.onload = render;
+    function removeCrew(i) { crew.splice(i, 1); localStorage.setItem('rv_crew', JSON.stringify(crew)); render(); }
+
+    window.onload = () => nav('oplog');
 </script>
 </body>
 </html>
