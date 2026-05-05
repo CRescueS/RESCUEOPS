@@ -3,12 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>RescueLog Pro | Tactical Mobile</title>
+    <title>RescueLog Pro | Mission Command</title>
     <style>
         :root {
             --safety-orange: #FF6B00;
             --danger: #FF4444;
             --success: #00C851;
+            --info: #0099CC;
             --dark-bg: #0d0d0d;
             --card-bg: #1a1a1a;
             --text: #eee;
@@ -17,34 +18,10 @@
 
         body { font-family: 'Inter', sans-serif; background: var(--dark-bg); color: var(--text); margin: 0; display: flex; height: 100vh; overflow: hidden; }
         
-        .sidebar { 
-            width: var(--sidebar-width); 
-            background: #000; 
-            border-right: 1px solid #333; 
-            display: flex; 
-            flex-direction: column; 
-            transition: transform 0.3s ease;
-            z-index: 1000;
-        }
-
-        .sidebar-overlay {
-            display: none;
-            position: fixed;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(0,0,0,0.8);
-            z-index: 900;
-        }
-
-        .hamburger {
-            display: none;
-            cursor: pointer;
-            padding: 15px;
-            z-index: 1100;
-            background: #111;
-            border-bottom: 1px solid #333;
-        }
-
-        .hamburger div { width: 25px; height: 3px; background-color: var(--safety-orange); margin: 5px 0; transition: 0.4s; }
+        .sidebar { width: var(--sidebar-width); background: #000; border-right: 1px solid #333; display: flex; flex-direction: column; transition: transform 0.3s ease; z-index: 1000; }
+        .sidebar-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); z-index: 900; }
+        .hamburger { display: none; cursor: pointer; padding: 15px; z-index: 1100; background: #111; border-bottom: 1px solid #333; }
+        .hamburger div { width: 25px; height: 3px; background-color: var(--safety-orange); margin: 5px 0; }
 
         @media (max-width: 768px) {
             .sidebar { position: fixed; height: 100%; transform: translateX(-100%); }
@@ -61,17 +38,18 @@
         .header { padding: 15px 25px; background: #111; border-bottom: 1px solid #333; display: flex; justify-content: space-between; align-items: center; }
         .container { padding: 15px; flex: 1; }
 
-        .table-wrap { background: var(--card-bg); border-radius: 8px; overflow-x: auto; border: 1px solid #333; margin-bottom: 20px; }
+        .btn-grid { display: grid; grid-template-columns: 1fr; gap: 10px; margin-bottom: 20px; }
+        .log-btn { padding: 20px; border: none; border-radius: 8px; font-weight: 800; font-size: 0.9rem; cursor: pointer; color: #000; text-transform: uppercase; transition: 0.1s; }
+        .btn-hq { background: var(--info); }
+        .btn-scene { background: var(--safety-orange); }
+        .btn-clear { background: var(--success); }
+        .btn-standby { background: #666; color: #fff; }
+        .log-btn:active { transform: scale(0.98); opacity: 0.8; }
+
+        .table-wrap { background: var(--card-bg); border-radius: 8px; overflow-x: auto; border: 1px solid #333; }
         table { width: 100%; border-collapse: collapse; min-width: 350px; }
         th { text-align: left; background: #222; padding: 10px; font-size: 0.7rem; color: var(--safety-orange); }
-        td { padding: 12px 10px; border-bottom: 1px solid #222; font-size: 0.85rem; }
-        
-        .btn { background: var(--safety-orange); color: #000; border: none; padding: 12px; border-radius: 6px; font-weight: bold; width: 100%; margin-bottom: 10px; cursor: pointer; }
-        .btn-small { background: transparent; border: 1px solid #444; color: #eee; padding: 5px 10px; border-radius: 4px; font-size: 0.7rem; cursor: pointer; }
-        
-        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 2000; padding: 20px; box-sizing: border-box; }
-        .modal-content { background: #1a1a1a; padding: 20px; border-radius: 8px; border: 1px solid var(--safety-orange); max-width: 400px; margin: auto; }
-        input, select { width: 100%; padding: 12px; background: #000; border: 1px solid #333; color: #fff; margin: 10px 0; border-radius: 4px; box-sizing: border-box; }
+        td { padding: 12px 10px; border-bottom: 1px solid #222; font-size: 0.85rem; font-family: 'Courier New', monospace; }
         
         .hidden { display: none; }
     </style>
@@ -82,7 +60,8 @@
 
 <div id="sidebar" class="sidebar">
     <div class="nav-brand">CASINO RESCUE COMMAND</div>
-    <div class="nav-item active" onclick="nav('dash')">📊 Squad Status</div>
+    <div class="nav-item" onclick="nav('dash')">📊 Squad Status</div>
+    <div class="nav-item active" onclick="nav('oplog')">⏱️ Operational Log</div>
     <div class="nav-item" onclick="nav('training')">🧗 Training Log</div>
     <div class="nav-item" onclick="nav('hardware')">⚙️ Hardware</div>
     <div class="nav-item" onclick="nav('crew')">👥 Kits</div>
@@ -94,62 +73,39 @@
     </div>
 
     <div class="header">
-        <h2 id="view-title" style="font-size: 1rem; margin:0;">SQUAD STATUS</h2>
+        <h2 id="view-title" style="font-size: 1rem; margin:0;">OPERATIONAL LOG</h2>
     </div>
 
     <div class="container">
-        <!-- Dashboard -->
-        <div id="view-dash">
-            <button class="btn" onclick="openCrewModal()">+ ADD OPERATOR</button>
+        <!-- Operational Log View -->
+        <div id="view-oplog">
+            <div class="btn-grid">
+                <button class="log-btn btn-hq" onclick="stamp('DEPARTING HQ')">Departing HQ</button>
+                <button class="log-btn btn-scene" onclick="stamp('ON SCENE')">On Scene</button>
+                <button class="log-btn btn-scene" onclick="stamp('DEPARTING SCENE')">Departing Scene</button>
+                <button class="log-btn btn-hq" onclick="stamp('AT HQ / SHUTDOWN')">At HQ / Shutting Down</button>
+                <button class="log-btn btn-standby" onclick="stamp('STANDBY')">Standby</button>
+            </div>
+            
             <div class="table-wrap">
                 <table>
-                    <thead><tr><th>Callsign</th><th>Status</th><th>Action</th></tr></thead>
-                    <tbody id="status-body"></tbody>
+                    <thead><tr><th>Timestamp</th><th>Event Status</th></tr></thead>
+                    <tbody id="op-log-body"></tbody>
                 </table>
             </div>
+            <button onclick="clearOpLog()" style="margin-top:20px; background:none; border:1px solid #444; color:#888; padding:8px; border-radius:4px; width:100%; cursor:pointer;">Clear Mission Log</button>
         </div>
 
-        <!-- Training -->
-        <div id="view-training" class="hidden">
-            <button class="btn" onclick="openTrainModal()">+ LOG SESSION</button>
-            <div class="table-wrap">
-                <table>
-                    <thead><tr><th>Date</th><th>Op</th><th>Skills</th></tr></thead>
-                    <tbody id="train-log-body"></tbody>
-                </table>
-            </div>
-        </div>
-
-        <!-- Hardware -->
-        <div id="view-hardware" class="hidden">
-            <button class="btn" onclick="openHwModal()">+ NEW ASSET</button>
-            <div class="table-wrap"><table id="hw-table"></table></div>
-        </div>
-
-        <!-- Crew/Vehicle Kits -->
-        <div id="view-crew" class="hidden">
-            <div id="kit-content"></div>
-        </div>
-    </div>
-</div>
-
-<!-- Modals -->
-<div id="crewModal" class="modal">
-    <div class="modal-content">
-        <h3>Operator Config</h3>
-        <input type="hidden" id="c-idx">
-        <input type="text" id="c-name" placeholder="Full Name">
-        <input type="text" id="c-callsign" placeholder="Callsign (Excl. I,T,D,M)">
-        <button class="btn" onclick="saveCrew()">SAVE OPERATOR</button>
-        <button class="btn" style="background:#333; color:#fff" onclick="closeModal('crewModal')">CANCEL</button>
+        <!-- Placeholder for other views -->
+        <div id="view-dash" class="hidden"><p>Squad currency and status data.</p></div>
+        <div id="view-training" class="hidden"><p>VR Training logs.</p></div>
+        <div id="view-hardware" class="hidden"><p>Arizona Vortex and gear registry.</p></div>
+        <div id="view-crew" class="hidden"><p>Personal and Vehicle kit breakdowns.</p></div>
     </div>
 </div>
 
 <script>
-    // Persistence Logic
-    let crew = JSON.parse(localStorage.getItem('rv_crew')) || [{name:"Lead Op", callsign:"ALPHA"}];
-    let logs = JSON.parse(localStorage.getItem('rv_training')) || [];
-    let assets = JSON.parse(localStorage.getItem('rv_assets')) || [];
+    let opLogs = JSON.parse(localStorage.getItem('rv_op_logs')) || [];
 
     function toggleMenu() {
         document.getElementById('sidebar').classList.toggle('open');
@@ -161,53 +117,38 @@
         document.getElementById('view-' + target).classList.remove('hidden');
         document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
         if (window.innerWidth <= 768) toggleMenu();
-        document.getElementById('view-title').innerText = target.toUpperCase();
+        document.getElementById('view-title').innerText = target.toUpperCase().replace('OPLOG', 'OPERATIONAL LOG');
         render();
     }
 
-    function openModal(id) { document.getElementById(id).style.display = 'flex'; }
-    function closeModal(id) { document.getElementById(id).style.display = 'none'; }
-
-    function openCrewModal(idx = null) {
-        document.getElementById('c-idx').value = idx !== null ? idx : "";
-        document.getElementById('c-name').value = idx !== null ? crew[idx].name : "";
-        document.getElementById('c-callsign').value = idx !== null ? crew[idx].callsign : "";
-        openModal('crewModal');
+    function stamp(status) {
+        const now = new Date();
+        const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
+        const dateStr = now.toLocaleDateString();
+        
+        opLogs.unshift({ time: `${dateStr} ${timeStr}`, status: status });
+        localStorage.setItem('rv_op_logs', JSON.stringify(opLogs));
+        render();
     }
 
-    function saveCrew() {
-        const idx = document.getElementById('c-idx').value;
-        const call = document.getElementById('c-callsign').value.trim().toUpperCase();
-        if (['INDIA','TANGO','DELTA','MIKE'].includes(call)) return alert("Restricted Protocol: I,T,D,M Reserved for Triage.");
-        
-        const data = { name: document.getElementById('c-name').value, callsign: call };
-        if (idx === "") crew.push(data); else crew[idx] = data;
-        
-        localStorage.setItem('rv_crew', JSON.stringify(crew));
-        closeModal('crewModal');
-        render();
+    function clearOpLog() {
+        if(confirm("Archive and clear current mission timestamps?")) {
+            opLogs = [];
+            localStorage.setItem('rv_op_logs', JSON.stringify(opLogs));
+            render();
+        }
     }
 
     function render() {
-        const sixMo = new Date(); sixMo.setMonth(sixMo.getMonth() - 6);
-
-        // Render Status
-        document.getElementById('status-body').innerHTML = crew.map((c, i) => {
-            const hasLog = logs.some(l => l.op === c.callsign && new Date(l.date) > sixMo);
-            return `<tr>
-                <td><strong>${c.callsign}</strong></td>
-                <td><span style="color:${hasLog ? 'var(--success)' : 'var(--danger)'}">● ${hasLog ? 'CUR' : 'EXP'}</span></td>
-                <td><button class="btn-small" onclick="openCrewModal(${i})">EDIT</button></td>
-            </tr>`;
-        }).join('');
-
-        // Render Kits
-        document.getElementById('kit-content').innerHTML = crew.map(c => `
-            <div class="table-wrap">
-                <div style="padding:10px; background:#222; font-size:0.8rem;"><strong>${c.callsign}</strong> PERSONAL KIT</div>
-                <table>${assets.filter(a => a.owner === c.callsign).map(a => `<tr><td>${a.name}</td></tr>`).join('') || '<tr><td>No Gear Assigned</td></tr>'}</table>
-            </div>
-        `).join('');
+        const logBody = document.getElementById('op-log-body');
+        if(logBody) {
+            logBody.innerHTML = opLogs.map(l => `
+                <tr>
+                    <td>${l.time}</td>
+                    <td style="font-weight:bold; color:var(--safety-orange)">${l.status}</td>
+                </tr>
+            `).join('');
+        }
     }
 
     window.onload = render;
