@@ -18,6 +18,7 @@
 
         body { font-family: 'Inter', sans-serif; background: var(--dark-bg); color: var(--text); margin: 0; display: flex; height: 100vh; overflow: hidden; }
         
+        /* Layout Components */
         .sidebar { width: var(--sidebar-width); background: #000; border-right: 1px solid #333; display: flex; flex-direction: column; transition: transform 0.3s ease; z-index: 1000; }
         .sidebar-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); z-index: 900; }
         .hamburger { display: none; cursor: pointer; padding: 15px; z-index: 1100; background: #111; border-bottom: 1px solid #333; }
@@ -38,6 +39,7 @@
         .header { padding: 15px 25px; background: #111; border-bottom: 1px solid #333; display: flex; justify-content: space-between; align-items: center; }
         .container { padding: 15px; flex: 1; }
 
+        /* Tactical UI Elements */
         .btn-grid { display: grid; grid-template-columns: 1fr; gap: 10px; margin-bottom: 20px; }
         .log-btn { padding: 15px; border: none; border-radius: 8px; font-weight: 800; font-size: 0.85rem; cursor: pointer; color: #000; text-transform: uppercase; }
         .btn-hq { background: var(--info); }
@@ -54,7 +56,7 @@
 
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 2000; align-items: center; justify-content: center; padding: 20px; }
         .modal-content { background: #1a1a1a; padding: 20px; border-radius: 8px; border: 1px solid var(--safety-orange); width: 100%; max-width: 400px; }
-        input, select { width: 100%; padding: 12px; background: #000; border: 1px solid #333; color: #fff; margin: 10px 0; border-radius: 4px; box-sizing: border-box; }
+        input { width: 100%; padding: 12px; background: #000; border: 1px solid #333; color: #fff; margin: 10px 0; border-radius: 4px; box-sizing: border-box; }
     </style>
 </head>
 <body>
@@ -92,6 +94,7 @@
                     <tbody id="op-log-body"></tbody>
                 </table>
             </div>
+            <button onclick="clearOpLog()" style="width:100%; background:#222; color:#888; border:1px solid #444; padding:10px; border-radius:8px; cursor:pointer;">CLEAR LOG HISTORY</button>
         </div>
 
         <!-- SQUAD STATUS -->
@@ -107,7 +110,6 @@
 
         <!-- TRAINING LOG -->
         <div id="view-training" class="hidden">
-            <button class="log-btn btn-hq" style="width:100%; margin-bottom:15px;" onclick="openTrainModal()">+ LOG VR SESSION</button>
             <div class="table-wrap">
                 <table>
                     <thead><tr><th>Date</th><th>Op</th><th>Skill</th></tr></thead>
@@ -123,7 +125,6 @@
     </div>
 </div>
 
-<!-- MODAL: ADD OPERATOR -->
 <div id="crewModal" class="modal">
     <div class="modal-content">
         <h3>Operator Config</h3>
@@ -135,9 +136,9 @@
 </div>
 
 <script>
-    // Data structures
+    // Global State
     let crew = JSON.parse(localStorage.getItem('rv_crew')) || [{name:"Lead", callsign:"ALPHA"}];
-    let logs = JSON.parse(localStorage.getItem('rv_training')) || [];
+    let trainingLogs = JSON.parse(localStorage.getItem('rv_training')) || [];
     let opLogs = JSON.parse(localStorage.getItem('rv_op_logs')) || [];
 
     function toggleMenu() {
@@ -150,63 +151,86 @@
         document.getElementById('view-' + target).classList.remove('hidden');
         document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
         document.getElementById('nav-' + target).classList.add('active');
-        if (window.innerWidth <= 768) toggleMenu();
+        if (window.innerWidth <= 768) {
+            document.getElementById('sidebar').classList.remove('open');
+            document.getElementById('overlay').classList.remove('active');
+        }
         document.getElementById('view-title').innerText = target.toUpperCase().replace('OPLOG', 'MISSION LOG');
         render();
+    }
+
+    function stamp(status) {
+        const now = new Date();
+        const time = now.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit', second:'2-digit'});
+        opLogs.unshift({ time: time, status: status });
+        localStorage.setItem('rv_op_logs', JSON.stringify(opLogs));
+        render();
+    }
+
+    function clearOpLog() {
+        if(confirm("Permanently clear mission log history?")) {
+            opLogs = []; // Wipe local array
+            localStorage.setItem('rv_op_logs', JSON.stringify(opLogs)); // Update storage
+            render(); // Refresh UI
+        }
     }
 
     function openCrewModal() { document.getElementById('crewModal').style.display = 'flex'; }
     function closeModal(id) { document.getElementById(id).style.display = 'none'; }
 
     function saveCrew() {
-        const call = document.getElementById('c-callsign').value.toUpperCase();
-        if (['I','T','D','M'].includes(call[0])) return alert("Reserved: Callsign cannot start with Triage letters.");
+        const call = document.getElementById('c-callsign').value.trim().toUpperCase();
+        if (!call) return;
+        if (['I','T','D','M'].includes(call[0])) return alert("Callsign cannot start with reserved triage letters (I,T,D,M).");
+        
         crew.push({ name: document.getElementById('c-name').value, callsign: call });
         localStorage.setItem('rv_crew', JSON.stringify(crew));
         closeModal('crewModal');
         render();
     }
 
-    function stamp(status) {
-        const now = new Date();
-        opLogs.unshift({ time: now.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}), status: status });
-        localStorage.setItem('rv_op_logs', JSON.stringify(opLogs));
-        render();
+    function removeCrew(i) {
+        if(confirm("Remove operator from squad?")) {
+            crew.splice(i, 1);
+            localStorage.setItem('rv_crew', JSON.stringify(crew));
+            render();
+        }
     }
 
     function render() {
+        // 1. Mission Log
+        const logBody = document.getElementById('op-log-body');
+        logBody.innerHTML = opLogs.length > 0 
+            ? opLogs.map(l => `<tr><td>${l.time}</td><td style="color:var(--safety-orange); font-weight:bold;">${l.status}</td></tr>`).join('')
+            : '<tr><td colspan="2" style="color:#555; text-align:center;">Log Empty</td></tr>';
+
+        // 2. Squad Status (Currency Tracking)
         const sixMo = new Date(); sixMo.setMonth(sixMo.getMonth() - 6);
-
-        // Render Mission Log
-        document.getElementById('op-log-body').innerHTML = opLogs.map(l => 
-            `<tr><td>${l.time}</td><td style="color:var(--safety-orange); font-weight:bold;">${l.status}</td></tr>`
-        ).join('');
-
-        // Render Status (Currency Tracking)
         document.getElementById('status-body').innerHTML = crew.map((c, i) => {
-            const hasLog = logs.some(l => l.op === c.callsign && new Date(l.date) > sixMo);
+            const hasLog = trainingLogs.some(l => l.op === c.callsign && new Date(l.date) > sixMo);
             return `<tr>
                 <td><strong>${c.callsign}</strong></td>
                 <td><span class="status-pill" style="background:${hasLog ? 'var(--success)' : 'var(--danger)'}"></span>${hasLog ? 'CUR' : 'EXP'}</td>
-                <td><button onclick="removeCrew(${i})" style="background:none; border:none; color:var(--danger);">DEL</button></td>
+                <td><button onclick="removeCrew(${i})" style="background:none; border:none; color:var(--danger); cursor:pointer;">DEL</button></td>
             </tr>`;
         }).join('');
 
-        // Render Training Log
-        document.getElementById('train-log-body').innerHTML = logs.map(l => 
-            `<tr><td>${l.date}</td><td>${l.op}</td><td>${l.skill}</td></tr>`
-        ).join('');
+        // 3. Training Log
+        document.getElementById('train-log-body').innerHTML = trainingLogs.length > 0
+            ? trainingLogs.map(l => `<tr><td>${l.date}</td><td>${l.op}</td><td>${l.skill}</td></tr>`).join('')
+            : '<tr><td colspan="3" style="color:#555; text-align:center;">No VR Sessions Logged</td></tr>';
 
-        // Render Kits
+        // 4. Kits
         document.getElementById('kit-content').innerHTML = crew.map(c => `
             <div class="table-wrap">
-                <div style="padding:10px; background:#222; font-size:0.75rem; color:var(--safety-orange)">${c.callsign} :: KIT CONFIG</div>
-                <table><tr><td>Personal Trauma Module (MARCH)</td></tr><tr><td>Ascent/Descent Mechanicals</td></tr></table>
+                <div style="padding:10px; background:#222; font-size:0.75rem; color:var(--safety-orange); font-weight:bold;">${c.callsign} :: KIT ASSIGNMENT</div>
+                <table>
+                    <tr><td>MARCH Medical Module</td></tr>
+                    <tr><td>High-Angle Rope Mechanicals (Edelrid/Petzl)</td></tr>
+                </table>
             </div>
         `).join('');
     }
-
-    function removeCrew(i) { crew.splice(i, 1); localStorage.setItem('rv_crew', JSON.stringify(crew)); render(); }
 
     window.onload = () => nav('oplog');
 </script>
