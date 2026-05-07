@@ -53,8 +53,8 @@
         .hidden { display: none !important; }
 
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 2000; align-items: center; justify-content: center; padding: 20px; }
-        .modal-content { background: #1a1a1a; padding: 20px; border-radius: 8px; border: 1px solid var(--safety-orange); width: 100%; max-width: 400px; }
-        input, select { width: 100%; padding: 12px; background: #000; border: 1px solid #333; color: #fff; margin: 10px 0; border-radius: 4px; box-sizing: border-box; }
+        .modal-content { background: #1a1a1a; padding: 20px; border-radius: 8px; border: 1px solid var(--safety-orange); width: 100%; max-width: 400px; max-height: 80vh; overflow-y: auto; }
+        input, select, textarea { width: 100%; padding: 12px; background: #000; border: 1px solid #333; color: #fff; margin: 10px 0; border-radius: 4px; box-sizing: border-box; font-family: inherit; }
     </style>
 </head>
 <body>
@@ -120,29 +120,34 @@
     </div>
 </div>
 
-<div id="crewModal" class="modal">
-    <div class="modal-content">
-        <h3>Operator Config</h3>
-        <input type="text" id="c-name" placeholder="Full Name">
-        <input type="text" id="c-callsign" placeholder="Callsign">
-        <button class="log-btn btn-scene" style="width:100%" onclick="saveCrew()">SAVE</button>
-        <button class="log-btn btn-standby" style="width:100%; margin-top:10px;" onclick="closeModal('crewModal')">CANCEL</button>
-    </div>
-</div>
+<div id="crewModal" class="modal"><div class="modal-content">
+    <h3>Operator Config</h3>
+    <input type="text" id="c-name" placeholder="Full Name">
+    <input type="text" id="c-callsign" placeholder="Callsign">
+    <button class="log-btn btn-scene" style="width:100%" onclick="saveCrew()">SAVE</button>
+    <button class="log-btn btn-standby" style="width:100%; margin-top:10px;" onclick="closeModal('crewModal')">CANCEL</button>
+</div></div>
 
-<div id="trainModal" class="modal">
-    <div class="modal-content">
-        <h3>Log VR Session</h3>
-        <input type="date" id="t-date">
-        <select id="t-op"></select>
-        <input type="text" id="t-skill" placeholder="Skill (e.g., Mechanical Advantage)">
-        <button class="log-btn btn-hq" style="width:100%" onclick="saveTraining()">LOG SESSION</button>
-        <button class="log-btn btn-standby" style="width:100%; margin-top:10px;" onclick="closeModal('trainModal')">CANCEL</button>
-    </div>
-</div>
+<div id="trainModal" class="modal"><div class="modal-content">
+    <h3>Log VR Session</h3>
+    <input type="date" id="t-date">
+    <select id="t-op"></select>
+    <input type="text" id="t-skill" placeholder="Skill covered">
+    <button class="log-btn btn-hq" style="width:100%" onclick="saveTraining()">LOG SESSION</button>
+    <button class="log-btn btn-standby" style="width:100%; margin-top:10px;" onclick="closeModal('trainModal')">CANCEL</button>
+</div></div>
+
+<div id="kitModal" class="modal"><div class="modal-content">
+    <h3 id="kit-modal-title">Edit Loadout</h3>
+    <input type="hidden" id="k-op-idx">
+    <p style="font-size:0.8rem; color:#888;">Enter gear items (one per line):</p>
+    <textarea id="k-items" rows="10" placeholder="Example:&#10;MARCH Pouch&#10;Petzl I'D&#10;Edelrid Looper"></textarea>
+    <button class="log-btn btn-scene" style="width:100%" onclick="saveKit()">UPDATE LOADOUT</button>
+    <button class="log-btn btn-standby" style="width:100%; margin-top:10px;" onclick="closeModal('kitModal')">CANCEL</button>
+</div></div>
 
 <script>
-    let crew = JSON.parse(localStorage.getItem('rv_crew')) || [{name:"Lead", callsign:"ALPHA"}];
+    let crew = JSON.parse(localStorage.getItem('rv_crew')) || [{name:"Lead", callsign:"ALPHA", kit: ["MARCH Module", "Mechanicals"]}];
     let trainingLogs = JSON.parse(localStorage.getItem('rv_training')) || [];
     let opLogs = JSON.parse(localStorage.getItem('rv_op_logs')) || [];
 
@@ -187,28 +192,37 @@
         document.getElementById('t-date').valueAsDate = new Date();
         document.getElementById('trainModal').style.display = 'flex';
     }
+    function openKitModal(idx) {
+        document.getElementById('k-op-idx').value = idx;
+        document.getElementById('kit-modal-title').innerText = `Loadout: ${crew[idx].callsign}`;
+        document.getElementById('k-items').value = (crew[idx].kit || []).join('\n');
+        document.getElementById('kitModal').style.display = 'flex';
+    }
     function closeModal(id) { document.getElementById(id).style.display = 'none'; }
 
     function saveCrew() {
         const call = document.getElementById('c-callsign').value.trim().toUpperCase();
         if (!call) return;
-        if (['I','T','D','M'].includes(call[0])) return alert("Restricted triage callsign.");
-        crew.push({ name: document.getElementById('c-name').value, callsign: call });
+        crew.push({ name: document.getElementById('c-name').value, callsign: call, kit: ["Standard Issue"] });
         localStorage.setItem('rv_crew', JSON.stringify(crew));
         closeModal('crewModal');
         render();
     }
 
     function saveTraining() {
-        const data = {
-            date: document.getElementById('t-date').value,
-            op: document.getElementById('t-op').value,
-            skill: document.getElementById('t-skill').value
-        };
-        if (!data.skill) return alert("Enter skill covered.");
+        const data = { date: document.getElementById('t-date').value, op: document.getElementById('t-op').value, skill: document.getElementById('t-skill').value };
         trainingLogs.unshift(data);
         localStorage.setItem('rv_training', JSON.stringify(trainingLogs));
         closeModal('trainModal');
+        render();
+    }
+
+    function saveKit() {
+        const idx = document.getElementById('k-op-idx').value;
+        const items = document.getElementById('k-items').value.split('\n').filter(line => line.trim() !== "");
+        crew[idx].kit = items;
+        localStorage.setItem('rv_crew', JSON.stringify(crew));
+        closeModal('kitModal');
         render();
     }
 
@@ -226,7 +240,7 @@
             ? opLogs.map(l => `<tr><td>${l.time}</td><td style="color:var(--safety-orange); font-weight:bold;">${l.status}</td></tr>`).join('')
             : '<tr><td colspan="2" style="color:#555; text-align:center;">Log Empty</td></tr>';
 
-        // Squad Status (Currency Tracking)
+        // Squad Status
         const sixMo = new Date(); sixMo.setMonth(sixMo.getMonth() - 6);
         document.getElementById('status-body').innerHTML = crew.map((c, i) => {
             const hasLog = trainingLogs.some(l => l.op === c.callsign && new Date(l.date) > sixMo);
@@ -234,15 +248,18 @@
         }).join('');
 
         // Training Log
-        document.getElementById('train-log-body').innerHTML = trainingLogs.length > 0
-            ? trainingLogs.map(l => `<tr><td>${l.date}</td><td>${l.op}</td><td>${l.skill}</td></tr>`).join('')
-            : '<tr><td colspan="3" style="color:#555; text-align:center;">No Sessions</td></tr>';
+        document.getElementById('train-log-body').innerHTML = trainingLogs.map(l => `<tr><td>${l.date}</td><td>${l.op}</td><td>${l.skill}</td></tr>`).join('');
 
-        // Kits
-        document.getElementById('kit-content').innerHTML = crew.map(c => `
+        // Kits (Dynamic List)
+        document.getElementById('kit-content').innerHTML = crew.map((c, i) => `
             <div class="table-wrap">
-                <div style="padding:10px; background:#222; font-size:0.75rem; color:var(--safety-orange)">${c.callsign} :: KIT CONFIG</div>
-                <table><tr><td>MARCH Module / Mechanicals</td></tr></table>
+                <div style="padding:10px; background:#222; display:flex; justify-content:space-between; align-items:center;">
+                    <span style="font-size:0.75rem; color:var(--safety-orange); font-weight:bold;">${c.callsign} :: KIT</span>
+                    <button class="log-btn btn-hq" style="padding:4px 8px; font-size:0.6rem;" onclick="openKitModal(${i})">EDIT LOADOUT</button>
+                </div>
+                <table>
+                    ${(c.kit || ["No items"]).map(item => `<tr><td>${item}</td></tr>`).join('')}
+                </table>
             </div>
         `).join('');
     }
