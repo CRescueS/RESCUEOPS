@@ -150,7 +150,7 @@
 </div></div>
 
 <script>
-    let crew = JSON.parse(localStorage.getItem('rv_crew')) || [{callsign:"ALPHA", kit:["MARCH", "Radio"]}];
+    let crew = JSON.parse(localStorage.getItem('rv_crew')) || [{callsign:"SHADOW", kit:["MARCH","IFAK", "Radio"]}];
     let opLogs = JSON.parse(localStorage.getItem('rv_op_logs')) || [];
     let smeacs = JSON.parse(localStorage.getItem('rv_smeacs')) || {};
     let manualProtocols = JSON.parse(localStorage.getItem('rv_others')) || [];
@@ -179,7 +179,7 @@
     function renderChecklist(type) {
         const lists = {
             roadcrash: ["Battery/Power Isolate", "Glass Mgmt", "Stabilization (Chocks)", "Hydraulic Tool Prep"],
-            vertical: ["Anchor Load Tested", "Edge Protection Set", "Main/Belay Synced", "Comms Check"],
+            vertical: ["Anchor Load Tested", "Edge Protection Set", "Main/Belay Synced", "Comms Check", "A.R.C.H.E.R"],
             hazmat: ["Wind Direction Noted", "Exclusion Zone Set", "Decon Shower Prep", "PPE Level Check"],
             landzone: ["100ft x 100ft Clear", "Slope < 10 deg", "Debris Removed", "Wind Indicator Set"]
         };
