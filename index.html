@@ -3,190 +3,171 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-    <title>RescueLog Pro | Command</title>
+    <title>RescueLog Pro | Elite</title>
     <style>
         :root {
-            --safety-orange: #FF6B00;
-            --danger: #FF4444;
-            --success: #00C851;
-            --info: #0099CC;
-            --dark-bg: #0d0d0d;
-            --card-bg: #1a1a1a;
-            --text: #eee;
-            --sidebar-width: 260px;
+            --safety-orange: #FF6B00; --danger: #FF4444; --success: #00C851;
+            --info: #0099CC; --dark-bg: #0d0d0d; --card-bg: #1a1a1a; --text: #eee;
+            --red-filter: none; --red-tint: transparent;
         }
+        /* Night Vision Mode */
+        body.night-mode { --safety-orange: #ff0000; --info: #aa0000; --success: #880000; --text: #ff0000; }
+        body.night-mode .log-btn, body.night-mode .sidebar { border: 1px solid #ff0000 !important; }
 
-        body { font-family: 'Inter', sans-serif; background: var(--dark-bg); color: var(--text); margin: 0; display: flex; height: 100vh; overflow: hidden; }
-        .sidebar { width: var(--sidebar-width); background: #000; border-right: 1px solid #333; display: flex; flex-direction: column; transition: transform 0.3s ease; z-index: 1000; }
-        .sidebar-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); z-index: 900; }
-        .hamburger { display: none; cursor: pointer; padding: 15px; z-index: 1100; background: #111; border-bottom: 1px solid #333; }
-        .hamburger div { width: 25px; height: 3px; background-color: var(--safety-orange); margin: 5px 0; }
-
-        @media (max-width: 768px) {
-            .sidebar { position: fixed; height: 100%; transform: translateX(-100%); }
-            .sidebar.open { transform: translateX(0); }
-            .sidebar-overlay.active { display: block; }
-            .hamburger { display: block; }
-        }
-
-        .nav-brand { padding: 25px; font-weight: 800; color: var(--safety-orange); border-bottom: 1px solid #222; font-size: 0.85rem; letter-spacing: 1px; }
-        .nav-item { padding: 18px 25px; cursor: pointer; color: #888; border-left: 4px solid transparent; font-size: 0.9rem; }
+        body { font-family: 'Inter', sans-serif; background: var(--dark-bg); color: var(--text); margin: 0; display: flex; height: 100vh; overflow: hidden; transition: 0.3s; }
+        
+        .sidebar { width: 260px; background: #000; border-right: 1px solid #333; display: flex; flex-direction: column; z-index: 1000; transition: transform 0.3s ease; }
+        .nav-brand { padding: 20px; font-weight: 800; color: var(--safety-orange); border-bottom: 1px solid #222; font-size: 0.8rem; letter-spacing: 1px; display:flex; justify-content: space-between; }
+        .nav-item { padding: 15px 20px; cursor: pointer; color: #888; border-left: 4px solid transparent; font-size: 0.85rem; }
         .nav-item.active { color: #fff; background: #111; border-left-color: var(--safety-orange); }
 
         .main { flex: 1; overflow-y: auto; display: flex; flex-direction: column; }
-        .header { padding: 15px 25px; background: #111; border-bottom: 1px solid #333; }
-        .container { padding: 15px; flex: 1; padding-bottom: 80px; }
-
-        .table-wrap { background: var(--card-bg); border-radius: 8px; border: 1px solid #333; margin-bottom: 20px; overflow: hidden; }
-        .log-btn { padding: 15px; border: none; border-radius: 8px; font-weight: 800; font-size: 0.8rem; cursor: pointer; color: #000; text-transform: uppercase; width: 100%; margin-bottom: 10px; }
-        .btn-hq { background: var(--info); }
-        .btn-scene { background: var(--safety-orange); }
-        .btn-standby { background: #333; color: #888; }
+        .header { padding: 12px 20px; background: #111; border-bottom: 1px solid #333; position: sticky; top: 0; z-index: 100; display: flex; justify-content: space-between; align-items: center;}
+        .container { padding: 15px; padding-bottom: 80px; }
         
-        textarea { width: 100%; padding: 12px; background: #000; border: 1px solid #333; color: #fff; border-radius: 4px; box-sizing: border-box; font-family: inherit; margin-top: 5px; resize: none; }
-        label { font-size: 0.7rem; font-weight: bold; color: var(--safety-orange); }
-
+        .table-wrap { background: var(--card-bg); border-radius: 8px; border: 1px solid #333; margin-bottom: 15px; overflow: hidden; }
+        .log-btn { padding: 14px; border: none; border-radius: 8px; font-weight: 800; width: 100%; margin-bottom: 8px; text-transform: uppercase; cursor: pointer; font-size: 0.75rem; transition: 0.1s; }
+        .btn-hq { background: var(--info); color: white; }
+        .btn-scene { background: var(--safety-orange); color: black; }
+        .btn-standby { background: #222; color: #888; border: 1px solid #333; }
+        .btn-danger { background: transparent; color: var(--danger); border: 1px solid var(--danger) !important; }
+        
+        .triage-card { padding: 15px; margin-bottom: 5px; font-weight: bold; text-align: center; border-radius: 4px; color: black; }
+        
+        textarea, input { width: 100%; background: #000; color: #fff; border: 1px solid #333; padding: 10px; border-radius: 4px; box-sizing: border-box; font-family: inherit; margin-top: 5px; }
+        label { font-size: 0.65rem; font-weight: bold; color: var(--safety-orange); display: block; margin-top: 10px; text-transform: uppercase; }
+        
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 2000; align-items: center; justify-content: center; padding: 20px; }
-        .modal-content { background: #1a1a1a; padding: 20px; border-radius: 8px; border: 1px solid var(--safety-orange); width: 100%; max-width: 400px; }
+        .modal-content { background: #1a1a1a; padding: 20px; border-radius: 8px; border: 1px solid var(--safety-orange); width: 100%; max-width: 500px; }
+        
         .hidden { display: none !important; }
+        @media (max-width: 768px) {
+            .sidebar { position: fixed; height: 100%; transform: translateX(-100%); }
+            .sidebar.open { transform: translateX(0); }
+            .hamburger { display: block !important; padding: 15px; background: #111; cursor: pointer; }
+        }
     </style>
 </head>
 <body>
 
-<div id="overlay" class="sidebar-overlay" onclick="toggleMenu()"></div>
-
 <div id="sidebar" class="sidebar">
-    <div class="nav-brand">RESCUE COMMAND</div>
+    <div class="nav-brand">RESCUE COMMAND <span onclick="toggleNight()" style="cursor:pointer">👁️</span></div>
     <div id="nav-oplog" class="nav-item active" onclick="nav('oplog')">⏱️ MISSION LOG</div>
     <div id="nav-smeacs" class="nav-item" onclick="nav('smeacs')">📋 SMEACS BRIEF</div>
     <div id="nav-checklists" class="nav-item" onclick="nav('checklists')">✅ CHECKLISTS</div>
     <div id="nav-dash" class="nav-item" onclick="nav('dash')">👥 SQUAD</div>
-    <div id="nav-crew" class="nav-item" onclick="nav('crew')">🎒 KITS</div>
-    <div id="nav-medref" class="nav-item" onclick="nav('medref')">🏥 MEDICAL REF</div>
+    <div id="nav-medref" class="nav-item" onclick="nav('medref')">🏥 MEDICAL / TRIAGE</div>
+    <div id="nav-others" class="nav-item" onclick="nav('others')">📁 ALL OTHERS / MA</div>
 </div>
 
 <div class="main">
-    <div class="hamburger" onclick="toggleMenu()">
-        <div></div><div></div><div></div>
-    </div>
-
-    <div class="header"><h2 id="view-title" style="font-size: 1rem; margin:0; text-transform: uppercase;">MISSION LOG</h2></div>
+    <div class="hamburger" id="ham-btn" onclick="toggleMenu()" style="display:none;">☰ MENU</div>
+    <div class="header"><h2 id="view-title" style="margin:0; font-size:0.9rem; letter-spacing:1px;">MISSION LOG</h2></div>
 
     <div class="container">
-        <div id="view-medref" class="hidden">
-            <div style="margin-bottom: 20px;">
-                <h3 style="margin:0; font-size: 1.4rem;">Field Medical</h3>
-                <p style="color:var(--safety-orange); font-size: 0.75rem; font-weight:bold;">MARCH PROTOCOL</p>
-            </div>
-            <div class="table-wrap">
-                <div style="padding:15px; border-bottom:1px solid #222;" onclick="toggleMed('m')">
-                    <div style="color:var(--danger); font-weight:bold;">M - MASSIVE HEMORRHAGE</div>
-                    <div id="med-m" class="hidden" style="margin-top:10px; font-size:0.85rem;">• Apply TQ High & Tight<br>• Pack junctional wounds</div>
-                </div>
-                <div style="padding:15px; border-bottom:1px solid #222;" onclick="toggleMed('a')">
-                    <div style="color:var(--info); font-weight:bold;">A - AIRWAY</div>
-                    <div id="med-a" class="hidden" style="margin-top:10px; font-size:0.85rem;">• Chin lift / Jaw thrust<br>• Consider NPA/OPA</div>
-                </div>
-                <div style="padding:15px;" onclick="toggleMed('r')">
-                    <div style="color:var(--success); font-weight:bold;">R - RESPIRATIONS</div>
-                    <div id="med-r" class="hidden" style="margin-top:10px; font-size:0.85rem;">• Seal chest wounds<br>• Assist ventilation</div>
-                </div>
-            </div>
-        </div>
-
-        <div id="view-oplog">
+        <div id="view-oplog" class="view-section">
             <button class="log-btn btn-hq" onclick="stamp('DEPARTING HQ')">Departing HQ</button>
             <button class="log-btn btn-scene" onclick="stamp('ON SCENE')">On Scene</button>
+            <button class="log-btn btn-scene" onclick="stamp('DEPARTING SCENE')">Departing Scene</button>
+            <button class="log-btn btn-standby" onclick="openHotDebrief()">Hot Debrief Checklist</button>
             <button class="log-btn btn-hq" onclick="stamp('AT HQ / SHUTDOWN')">At HQ / Shutdown</button>
-            <div class="table-wrap">
-                <table style="width:100%; border-collapse: collapse;">
-                    <tbody id="op-log-body"></tbody>
-                </table>
+            <div class="table-wrap"><table style="width:100%"><tbody id="op-log-body"></tbody></table></div>
+            <button class="log-btn btn-danger" onclick="clearLogs()">CLEAR MISSION LOG</button>
+        </div>
+
+        <div id="view-smeacs" class="view-section hidden">
+            <div class="table-wrap" style="padding:15px;">
+                <label>S / M / E / A / C / S</label>
+                <textarea id="sm-s" placeholder="Situation" oninput="saveSmeacs()"></textarea>
+                <textarea id="sm-m" placeholder="Mission" oninput="saveSmeacs()"></textarea>
+                <textarea id="sm-e" placeholder="Execution" oninput="saveSmeacs()"></textarea>
+                <textarea id="sm-a" placeholder="Admin/Logistics" oninput="saveSmeacs()"></textarea>
+                <textarea id="sm-c" placeholder="Comms/Command" oninput="saveSmeacs()"></textarea>
+                <textarea id="sm-safety" placeholder="Safety" style="border-color:var(--danger)" oninput="saveSmeacs()"></textarea>
             </div>
         </div>
 
-        <div id="view-smeacs" class="hidden">
-            <div class="table-wrap" style="padding: 15px;">
-                <label>SITUATION</label><textarea id="sm-s" rows="3" oninput="saveSmeacs()"></textarea><br><br>
-                <label>MISSION</label><textarea id="sm-m" rows="2" oninput="saveSmeacs()"></textarea>
+        <div id="view-checklists" class="view-section hidden">
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-bottom:15px;">
+                <button class="log-btn btn-hq" onclick="renderChecklist('roadcrash')">Road Crash</button>
+                <button class="log-btn btn-hq" onclick="renderChecklist('vertical')">Vertical</button>
+                <button class="log-btn btn-hq" onclick="renderChecklist('hazmat')">Hazmat</button>
+                <button class="log-btn btn-hq" onclick="renderChecklist('landzone')">Landing Zone</button>
             </div>
-            <button class="log-btn btn-standby" onclick="clearSmeacs()">RESET BRIEF</button>
+            <div id="checklist-container" class="table-wrap"></div>
         </div>
 
-        <div id="view-checklists" class="hidden">
-            <div style="display:flex; gap:10px; margin-bottom:15px;">
-                <button class="log-btn btn-hq" style="margin:0" onclick="renderChecklist('roadcrash')">ROAD CRASH</button>
-                <button class="log-btn btn-hq" style="margin:0" onclick="renderChecklist('vertical')">VERTICAL</button>
-            </div>
-            <div class="table-wrap" id="checklist-container"></div>
+        <div id="view-dash" class="view-section hidden">
+            <button class="log-btn btn-scene" onclick="addOperator()">+ ADD OPERATOR</button>
+            <div class="table-wrap"><table style="width:100%" cellpadding="15"><tbody id="status-body"></tbody></table></div>
         </div>
 
-        <div id="view-dash" class="hidden">
-            <button class="log-btn btn-scene" onclick="openModal('crewModal')">+ ADD OPERATOR</button>
-            <div class="table-wrap">
-                <table style="width:100%; text-align:left;" cellpadding="15">
-                    <tbody id="status-body"></tbody>
-                </table>
-            </div>
+        <div id="view-medref" class="view-section hidden">
+            <label>START TRIAGE GUIDE</label>
+            <div class="triage-card" style="background:var(--success)">GREEN: Walking Wounded</div>
+            <div class="triage-card" style="background:#FFD700">YELLOW: Delayed / Resp &lt; 30</div>
+            <div class="triage-card" style="background:var(--danger); color:white;">RED: Immediate / No Pulse / Unconscious</div>
+            <div class="triage-card" style="background:black; color:white; border:1px solid #333;">BLACK: Deceased</div>
+            
+            <label style="margin-top:20px;">MARCH PROTOCOL</label>
+            <div class="table-wrap" id="march-accordion"></div>
         </div>
 
-        <div id="view-crew" class="hidden">
-            <div id="kit-content"></div>
+        <div id="view-others" class="view-section hidden">
+            <div class="table-wrap" style="padding:15px; background:linear-gradient(45deg, #111, #222)">
+                <label>Mechanical Advantage Calc</label>
+                <div style="display:flex; gap:10px; margin-top:10px;">
+                    <input type="number" id="ma-input" placeholder="Weight (kg)" style="width:70%">
+                    <select id="ma-ratio" style="background:#000; color:#fff; border:1px solid #333; border-radius:4px;">
+                        <option value="3">3:1</option>
+                        <option value="5">5:1</option>
+                        <option value="9">9:1</option>
+                    </select>
+                </div>
+                <button class="log-btn btn-hq" style="margin-top:10px;" onclick="calcMA()">Calculate Haul Force</button>
+                <div id="ma-result" style="font-size:0.8rem; margin-top:10px; color:var(--success)"></div>
+            </div>
+            <button class="log-btn btn-scene" onclick="openOtherModal()">+ ADD MANUAL PROTOCOL</button>
+            <div id="others-container"></div>
         </div>
     </div>
 </div>
 
-<div id="crewModal" class="modal"><div class="modal-content">
-    <h3>New Operator</h3>
-    <input type="text" id="c-callsign" placeholder="Callsign">
-    <button class="log-btn btn-scene" onclick="saveCrew()">ADD</button>
-    <button class="log-btn btn-standby" onclick="closeModal('crewModal')">CANCEL</button>
+<div id="otherModal" class="modal"><div class="modal-content">
+    <h3 id="other-modal-title">MANUAL ENTRY</h3>
+    <input type="text" id="other-title-input" placeholder="Title">
+    <textarea id="other-content-input" rows="8" placeholder="Manual steps..."></textarea>
+    <button class="log-btn btn-scene" onclick="saveOther()">SAVE</button>
+    <button class="log-btn btn-standby" onclick="closeModals()">CLOSE</button>
 </div></div>
 
-<div id="kitModal" class="modal"><div class="modal-content">
-    <h3 id="kit-title-ui">Edit Kit</h3>
-    <input type="hidden" id="kit-op-idx">
-    <textarea id="kit-items-ui" rows="10"></textarea>
-    <button class="log-btn btn-scene" onclick="saveKit()">UPDATE</button>
-    <button class="log-btn btn-standby" onclick="closeModal('kitModal')">CANCEL</button>
+<div id="hotDebriefModal" class="modal"><div class="modal-content">
+    <h3 style="color:var(--danger)">HOT DEBRIEF</h3>
+    <p style="font-size:0.8rem">• Any immediate safety concerns?<br>• What was our biggest challenge?<br>• Is anyone feeling overwhelmed?<br>• Equipment damage to report?</p>
+    <textarea id="debrief-notes" placeholder="Notes for the log..."></textarea>
+    <button class="log-btn btn-scene" onclick="submitDebrief()">STAMP DEBRIEF TO LOG</button>
+    <button class="log-btn btn-standby" onclick="closeModals()">CLOSE</button>
 </div></div>
 
 <script>
-    window.onerror = (m) => alert("Logic Error: " + m);
-
-    // Initial Load & Repair
-    let crew = JSON.parse(localStorage.getItem('rv_crew')) || [{callsign:"ALPHA", kit:["MARCH Module"]}];
-    crew = crew.map(m => ({
-        callsign: m.callsign || m.name || "UNNAMED",
-        kit: Array.isArray(m.kit) ? m.kit : ["Standard Issue"]
-    }));
-    
+    let crew = JSON.parse(localStorage.getItem('rv_crew')) || [{callsign:"ALPHA", kit:["MARCH", "Radio"]}];
     let opLogs = JSON.parse(localStorage.getItem('rv_op_logs')) || [];
-    let smeacs = JSON.parse(localStorage.getItem('rv_smeacs')) || {s:"",m:"",e:"",a:"",c:"",safety:""};
-    let chkState = JSON.parse(localStorage.getItem('rv_chk_state')) || {roadcrash:{}, vertical:{}};
-    let currentChecklist = 'roadcrash';
-
-    const rescueChecklists = {
-        roadcrash: { title: "Road Crash", items: ["Stabilization", "Glass", "Power", "Patient Shield"] },
-        vertical: { title: "Vertical Rescue", items: ["Anchors", "Edge Pro", "Main/Belay", "Harness"] }
-    };
-
-    function toggleMenu() {
-        document.getElementById('sidebar').classList.toggle('open');
-        document.getElementById('overlay').classList.toggle('active');
-    }
+    let smeacs = JSON.parse(localStorage.getItem('rv_smeacs')) || {};
+    let manualProtocols = JSON.parse(localStorage.getItem('rv_others')) || [];
 
     function nav(target) {
-        document.querySelectorAll('.container > div').forEach(d => d.classList.add('hidden'));
+        document.querySelectorAll('.view-section').forEach(v => v.classList.add('hidden'));
         document.getElementById('view-' + target).classList.remove('hidden');
         document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
         document.getElementById('nav-' + target).classList.add('active');
-        if(target === 'smeacs') loadSmeacsUI();
-        if(target === 'checklists') renderChecklist(currentChecklist);
-        if(window.innerWidth < 768) toggleMenu();
+        if(window.innerWidth < 768) document.getElementById('sidebar').classList.remove('open');
+        if(target === 'medref') renderMarch();
         render();
     }
+
+    function toggleNight() { document.body.classList.toggle('night-mode'); }
+    function toggleMenu() { document.getElementById('sidebar').classList.toggle('open'); }
+    function closeModals() { document.querySelectorAll('.modal').forEach(m => m.style.display = 'none'); }
 
     function stamp(status) {
         const time = new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
@@ -195,24 +176,66 @@
         render();
     }
 
-    function saveSmeacs() {
-        smeacs.s = document.getElementById('sm-s').value;
-        smeacs.m = document.getElementById('sm-m').value;
-        localStorage.setItem('rv_smeacs', JSON.stringify(smeacs));
-    }
-
-    function loadSmeacsUI() {
-        document.getElementById('sm-s').value = smeacs.s || "";
-        document.getElementById('sm-m').value = smeacs.m || "";
-    }
-
     function renderChecklist(type) {
-        currentChecklist = type;
-        const data = rescueChecklists[type];
-        const isLive = opLogs.length > 0 && opLogs[0].status !== 'AT HQ / SHUTDOWN';
-        document.getElementById('checklist-container').innerHTML = `<div style="padding:15px; color:var(--safety-orange); font-weight:bold;">${data.title}</div>` + 
-            data.items.map((item, idx) => `
-            <div style="display:flex; padding:15px; border-bottom:1px solid #222;">
-                <input type="checkbox" ${chkState[type][idx] ? 'checked' : ''} onchange="toggleCheck('${type}', ${idx})" ${isLive ? '' : 'disabled'}>
-                <span style="margin-left:10px;">${item}</span>
+        const lists = {
+            roadcrash: ["Battery/Power Isolate", "Glass Mgmt", "Stabilization (Chocks)", "Hydraulic Tool Prep"],
+            vertical: ["Anchor Load Tested", "Edge Protection Set", "Main/Belay Synced", "Comms Check"],
+            hazmat: ["Wind Direction Noted", "Exclusion Zone Set", "Decon Shower Prep", "PPE Level Check"],
+            landzone: ["100ft x 100ft Clear", "Slope < 10 deg", "Debris Removed", "Wind Indicator Set"]
+        };
+        document.getElementById('checklist-container').innerHTML = `<div style="padding:15px; color:var(--safety-orange); font-weight:bold;">${type.toUpperCase()} CHECKLIST</div>` + 
+            lists[type].map(item => `<div style="padding:12px; border-top:1px solid #222;"><input type="checkbox" style="width:auto; margin-right:10px;"> ${item}</div>`).join('');
+    }
+
+    function renderMarch() {
+        const march = [
+            {l:"M", t:"MASSIVE HEMORRHAGE", c:"TQ High/Tight. Wound Packing."},
+            {l:"A", t:"AIRWAY", c:"Head Tilt/Chin Lift. NPA/OPA."},
+            {l:"R", t:"RESPIRATIONS", c:"Chest Seals. Needle Decompression."},
+            {l:"C", t:"CIRCULATION", c:"Radial Pulses. Fluid Resus."},
+            {l:"H", t:"HYPOTHERMIA / HEAD", c:"Space Blankets. GCS check."}
+        ];
+        document.getElementById('march-accordion').innerHTML = march.map(m => `
+            <div style="padding:12px; border-bottom:1px solid #222">
+                <div style="color:var(--safety-orange); font-weight:bold; font-size:0.8rem;">${m.l} - ${m.t}</div>
+                <div style="font-size:0.75rem; margin-top:5px; color:#aaa">${m.c}</div>
             </div>`).join('');
+    }
+
+    function calcMA() {
+        const weight = document.getElementById('ma-input').value;
+        const ratio = document.getElementById('ma-ratio').value;
+        if(!weight) return;
+        const force = (weight / ratio).toFixed(1);
+        document.getElementById('ma-result').innerHTML = `Theoretical haul force: <strong>${force} kg</strong><br><small>*Does not account for friction.</small>`;
+    }
+
+    function openHotDebrief() { document.getElementById('hotDebriefModal').style.display = 'flex'; }
+    function submitDebrief() {
+        const notes = document.getElementById('debrief-notes').value;
+        stamp(`HOT DEBRIEF: ${notes}`);
+        closeModals();
+    }
+
+    function render() {
+        document.getElementById('op-log-body').innerHTML = opLogs.map(l => `<tr><td style="padding:10px; font-size:0.65rem; color:#666">${l.time}</td><td style="color:var(--safety-orange); font-weight:bold; font-size:0.85rem;">${l.status}</td></tr>`).join('');
+        document.getElementById('status-body').innerHTML = crew.map((c, i) => `<tr><td><strong>${c.callsign}</strong></td><td align="right"><button class="btn-standby" style="padding:5px 10px;" onclick="deleteOperator(${i})">DEL</button></td></tr>`).join('');
+        document.getElementById('others-container').innerHTML = manualProtocols.map((p, i) => `<div class="table-wrap" style="padding:15px;"><div style="color:var(--safety-orange); font-weight:bold;">${p.title}</div><div style="white-space:pre-wrap; font-size:0.8rem; margin-top:5px;">${p.content}</div></div>`).join('');
+    }
+
+    function clearLogs() { if(confirm("Wipe logs?")) { opLogs=[]; render(); } }
+    function addOperator() { const c = prompt("Callsign:"); if(c) { crew.push({callsign:c.toUpperCase(), kit:[]}); render(); } }
+    function deleteOperator(i) { crew.splice(i,1); render(); }
+    function openOtherModal() { document.getElementById('otherModal').style.display = 'flex'; }
+    function saveOther() { 
+        const title = document.getElementById('other-title-input').value;
+        const content = document.getElementById('other-content-input').value;
+        manualProtocols.push({title, content});
+        localStorage.setItem('rv_others', JSON.stringify(manualProtocols));
+        closeModals(); render();
+    }
+
+    window.onload = render;
+</script>
+</body>
+</html>
