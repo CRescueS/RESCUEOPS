@@ -1,6 +1,9 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>RescueLog Pro | Mission Command</title>
@@ -147,6 +150,21 @@
 </div></div>
 
 <script>
+// Function to load data safely
+function loadData(key, defaultValue) {
+    const saved = localStorage.getItem(key);
+    try {
+        return saved ? JSON.parse(saved) : defaultValue;
+    } catch (e) {
+        console.error("Data corruption in " + key + ", resetting to default.");
+        return defaultValue;
+    }
+}
+
+// Global State - Loaded automatically
+let crew = loadData('rv_crew', [{name:"Lead", callsign:"ALPHA", kit: ["MARCH Module"]}]);
+let trainingLogs = loadData('rv_training', []);
+let opLogs = loadData('rv_op_logs', []);
     let crew = JSON.parse(localStorage.getItem('rv_crew')) || [{name:"Lead", callsign:"ALPHA", kit: ["MARCH Module", "Mechanicals"]}];
     let trainingLogs = JSON.parse(localStorage.getItem('rv_training')) || [];
     let opLogs = JSON.parse(localStorage.getItem('rv_op_logs')) || [];
