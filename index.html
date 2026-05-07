@@ -1,12 +1,10 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-<meta http-equiv="Pragma" content="no-cache">
-<meta http-equiv="Expires" content="0">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>RescueLog Pro | Mission Command</title>
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <title>RescueLog Pro | Command</title>
     <style>
         :root {
             --safety-orange: #FF6B00;
@@ -21,6 +19,7 @@
 
         body { font-family: 'Inter', sans-serif; background: var(--dark-bg); color: var(--text); margin: 0; display: flex; height: 100vh; overflow: hidden; }
         
+        /* Layout */
         .sidebar { width: var(--sidebar-width); background: #000; border-right: 1px solid #333; display: flex; flex-direction: column; transition: transform 0.3s ease; z-index: 1000; }
         .sidebar-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); z-index: 900; }
         .hamburger { display: none; cursor: pointer; padding: 15px; z-index: 1100; background: #111; border-bottom: 1px solid #333; }
@@ -30,34 +29,32 @@
             .sidebar { position: fixed; height: 100%; transform: translateX(-100%); }
             .sidebar.open { transform: translateX(0); }
             .sidebar-overlay.active { display: block; }
-            .hamburger { display: block; position: sticky; top: 0; }
+            .hamburger { display: block; }
         }
 
-        .nav-brand { padding: 25px; font-weight: 800; color: var(--safety-orange); border-bottom: 1px solid #222; font-size: 0.85rem; }
+        .nav-brand { padding: 25px; font-weight: 800; color: var(--safety-orange); border-bottom: 1px solid #222; font-size: 0.85rem; letter-spacing: 1px; }
         .nav-item { padding: 18px 25px; cursor: pointer; color: #888; border-left: 4px solid transparent; font-size: 0.9rem; }
         .nav-item.active { color: #fff; background: #111; border-left-color: var(--safety-orange); }
 
         .main { flex: 1; overflow-y: auto; display: flex; flex-direction: column; }
-        .header { padding: 15px 25px; background: #111; border-bottom: 1px solid #333; display: flex; justify-content: space-between; align-items: center; }
-        .container { padding: 15px; flex: 1; }
+        .header { padding: 15px 25px; background: #111; border-bottom: 1px solid #333; }
+        .container { padding: 15px; flex: 1; padding-bottom: 80px; }
 
-        .btn-grid { display: grid; grid-template-columns: 1fr; gap: 10px; margin-bottom: 20px; }
-        .log-btn { padding: 15px; border: none; border-radius: 8px; font-weight: 800; font-size: 0.85rem; cursor: pointer; color: #000; text-transform: uppercase; }
+        /* Tactical UI */
+        .table-wrap { background: var(--card-bg); border-radius: 8px; border: 1px solid #333; margin-bottom: 20px; overflow: hidden; }
+        .log-btn { padding: 15px; border: none; border-radius: 8px; font-weight: 800; font-size: 0.8rem; cursor: pointer; color: #000; text-transform: uppercase; width: 100%; margin-bottom: 10px; }
         .btn-hq { background: var(--info); }
         .btn-scene { background: var(--safety-orange); }
-        .btn-standby { background: #666; color: #fff; }
+        .btn-standby { background: #333; color: #888; }
         
-        .table-wrap { background: var(--card-bg); border-radius: 8px; overflow-x: auto; border: 1px solid #333; margin-bottom: 20px; }
-        table { width: 100%; border-collapse: collapse; min-width: 320px; }
-        th { text-align: left; background: #222; padding: 10px; font-size: 0.7rem; color: var(--safety-orange); text-transform: uppercase; }
-        td { padding: 12px 10px; border-bottom: 1px solid #222; font-size: 0.85rem; }
-        
-        .status-pill { height: 10px; width: 10px; border-radius: 50%; display: inline-block; margin-right: 5px; }
-        .hidden { display: none !important; }
+        textarea { width: 100%; padding: 12px; background: #000; border: 1px solid #333; color: #fff; border-radius: 4px; box-sizing: border-box; font-family: inherit; margin-top: 5px; resize: none; }
+        label { font-size: 0.7rem; font-weight: bold; color: var(--safety-orange); }
 
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 2000; align-items: center; justify-content: center; padding: 20px; }
-        .modal-content { background: #1a1a1a; padding: 20px; border-radius: 8px; border: 1px solid var(--safety-orange); width: 100%; max-width: 400px; max-height: 80vh; overflow-y: auto; }
-        input, select, textarea { width: 100%; padding: 12px; background: #000; border: 1px solid #333; color: #fff; margin: 10px 0; border-radius: 4px; box-sizing: border-box; font-family: inherit; }
+        .modal-content { background: #1a1a1a; padding: 20px; border-radius: 8px; border: 1px solid var(--safety-orange); width: 100%; max-width: 400px; }
+        
+        input[type="text"], input[type="date"], select { width: 100%; padding: 12px; background: #000; border: 1px solid #333; color: #fff; margin: 10px 0; border-radius: 4px; box-sizing: border-box; }
+        .hidden { display: none !important; }
     </style>
 </head>
 <body>
@@ -65,54 +62,114 @@
 <div id="overlay" class="sidebar-overlay" onclick="toggleMenu()"></div>
 
 <div id="sidebar" class="sidebar">
-    <div class="nav-brand">CASINO RESCUE COMMAND</div>
-    <div id="nav-oplog" class="nav-item" onclick="nav('oplog')">⏱️ Operational Log</div>
-    <div id="nav-dash" class="nav-item" onclick="nav('dash')">📊 Squad Status</div>
-    <div id="nav-training" class="nav-item" onclick="nav('training')">🧗 Training Log</div>
-    <div id="nav-crew" class="nav-item" onclick="nav('crew')">👥 Kits</div>
+    <div class="nav-brand">RESCUE COMMAND</div>
+    <div id="nav-oplog" class="nav-item active" onclick="nav('oplog')">⏱️ MISSION LOG</div>
+    <div id="nav-smeacs" class="nav-item" onclick="nav('smeacs')">📋 SMEACS BRIEF</div>
+    <div id="nav-checklists" class="nav-item" onclick="nav('checklists')">✅ CHECKLISTS</div>
+    <div id="nav-dash" class="nav-item" onclick="nav('dash')">👥 SQUAD</div>
+    <div id="nav-crew" class="nav-item" onclick="nav('crew')">🎒 KITS</div>
+<div id="nav-medref" class="nav-item" onclick="nav('medref')">🏥 MEDICAL REF</div>
 </div>
 
 <div class="main">
     <div class="hamburger" onclick="toggleMenu()">
-        <div></div><div></div><div></div>
+        <div style="width: 25px; height: 3px; background: var(--safety-orange); margin: 5px 20px;"></div>
+        <div style="width: 25px; height: 3px; background: var(--safety-orange); margin: 5px 20px;"></div>
+        <div style="width: 25px; height: 3px; background: var(--safety-orange); margin: 5px 20px;"></div>
     </div>
 
-    <div class="header"><h2 id="view-title" style="font-size: 1rem; margin:0;">MISSION COMMAND</h2></div>
+    <div class="header"><h2 id="view-title" style="font-size: 1rem; margin:0; text-transform: uppercase;">MISSION LOG</h2></div>
 
     <div class="container">
-        <div id="view-oplog" class="hidden">
-            <div class="btn-grid">
-                <button class="log-btn btn-hq" onclick="stamp('DEPARTING HQ')">Departing HQ</button>
-                <button class="log-btn btn-scene" onclick="stamp('ON SCENE')">On Scene</button>
-                <button class="log-btn btn-scene" onclick="stamp('DEPARTING SCENE')">Departing Scene</button>
-                <button class="log-btn btn-hq" onclick="stamp('AT HQ / SHUTDOWN')">At HQ / Shutting Down</button>
-                <button class="log-btn btn-standby" onclick="stamp('STANDBY')">Standby</button>
+<div id="view-medref" class="hidden">
+    <div style="margin-bottom: 20px;">
+        <h3 style="margin:0; font-size: 1.4rem;">Field Medical</h3>
+        <p style="color:var(--safety-orange); font-size: 0.75rem; font-weight:bold;">MARCH PROTOCOL REFERENCE</p>
+    </div>
+
+    <div class="table-wrap">
+        <div style="padding:15px; border-bottom:1px solid #222;" onclick="toggleMed('m')">
+            <div style="color:var(--danger); font-weight:bold; font-size:1.1rem;">M - MASSIVE HEMORRHAGE</div>
+            <div id="med-m" class="hidden" style="margin-top:10px; font-size:0.85rem; line-height:1.4;">
+                • Apply Tourniquet (High & Tight)<br>
+                • Pack junctional wounds with hemostatic gauze<br>
+                • Apply pressure dressings
             </div>
+        </div>
+        <div style="padding:15px; border-bottom:1px solid #222;" onclick="toggleMed('a')">
+            <div style="color:var(--info); font-weight:bold; font-size:1.1rem;">A - AIRWAY</div>
+            <div id="med-a" class="hidden" style="margin-top:10px; font-size:0.85rem; line-height:1.4;">
+                • Head-tilt/Chin-lift or Jaw-thrust<br>
+                • Clear obstructions/suction<br>
+                • Consider OPA/NPA if unconscious
+            </div>
+        </div>
+        <div style="padding:15px; border-bottom:1px solid #222;" onclick="toggleMed('r')">
+            <div style="color:var(--success); font-weight:bold; font-size:1.1rem;">R - RESPIRATIONS</div>
+            <div id="med-r" class="hidden" style="margin-top:10px; font-size:0.85rem; line-height:1.4;">
+                • Seal open chest wounds (occlusive dressing)<br>
+                • Monitor for tension pneumothorax<br>
+                • Assist ventilations if < 10 or > 30 bpm
+            </div>
+        </div>
+        <div style="padding:15px; border-bottom:1px solid #222;" onclick="toggleMed('c')">
+            <div style="color:#aaa; font-weight:bold; font-size:1.1rem;">C - CIRCULATION</div>
+            <div id="med-c" class="hidden" style="margin-top:10px; font-size:0.85rem; line-height:1.4;">
+                • Check radial pulses<br>
+                • Re-assess tourniquets<br>
+                • Prevent hypovolemic shock (keep warm)
+            </div>
+        </div>
+        <div style="padding:15px;" onclick="toggleMed('h')">
+            <div style="color:#FFF; font-weight:bold; font-size:1.1rem;">H - HYPOTHERMIA / HEAD</div>
+            <div id="med-h" class="hidden" style="margin-top:10px; font-size:0.85rem; line-height:1.4;">
+                • Replace wet clothing<br>
+                • Use space blankets / heat pads<br>
+                • GCS / Pupil assessment
+            </div>
+        </div>
+    </div>
+</div>
+        <div id="view-oplog">
+            <button class="log-btn btn-hq" onclick="stamp('DEPARTING HQ')">Departing HQ</button>
+            <button class="log-btn btn-scene" onclick="stamp('ON SCENE')">On Scene</button>
+            <button class="log-btn btn-scene" onclick="stamp('DEPARTING SCENE')">Departing Scene</button>
+            <button class="log-btn btn-hq" onclick="stamp('AT HQ / SHUTDOWN')">At HQ / Shutdown</button>
             <div class="table-wrap">
-                <table>
-                    <thead><tr><th>Time</th><th>Status</th></tr></thead>
+                <table style="width:100%; border-collapse: collapse;">
                     <tbody id="op-log-body"></tbody>
                 </table>
             </div>
-            <button onclick="clearOpLog()" style="width:100%; background:#222; color:#888; border:1px solid #444; padding:10px; border-radius:8px; cursor:pointer;">CLEAR LOG HISTORY</button>
+            <button onclick="clearOpLog()" style="background:none; color:#555; border:none; width:100%; font-size:0.7rem;">CLEAR LOG HISTORY</button>
+        </div>
+
+        <div id="view-smeacs" class="hidden">
+            <div class="table-wrap" style="padding: 15px;">
+                <label>SITUATION</label><textarea id="sm-s" rows="3" oninput="saveSmeacs()"></textarea><br><br>
+                <label>MISSION</label><textarea id="sm-m" rows="2" oninput="saveSmeacs()"></textarea><br><br>
+                <label>EXECUTION</label><textarea id="sm-e" rows="3" oninput="saveSmeacs()"></textarea><br><br>
+                <label>ADMIN / LOGISTICS</label><textarea id="sm-a" rows="2" oninput="saveSmeacs()"></textarea><br><br>
+                <label>COMMAND / COMMS</label><textarea id="sm-c" rows="2" oninput="saveSmeacs()"></textarea><br><br>
+                <label style="color:var(--danger)">SAFETY</label><textarea id="sm-safety" rows="3" oninput="saveSmeacs()"></textarea>
+            </div>
+            <button class="log-btn btn-standby" onclick="clearSmeacs()">RESET BRIEF</button>
+        </div>
+
+        <div id="view-checklists" class="hidden">
+            <div style="display:flex; gap:10px; margin-bottom:15px;">
+                <button class="log-btn btn-hq" style="margin:0" onclick="renderChecklist('roadcrash')">ROAD CRASH</button>
+                <button class="log-btn btn-hq" style="margin:0" onclick="renderChecklist('vertical')">VERTICAL</button>
+            </div>
+            <div class="table-wrap" id="checklist-container"></div>
+            <button class="log-btn btn-standby" onclick="resetChecklistData()">RESET CURRENT SECTION</button>
         </div>
 
         <div id="view-dash" class="hidden">
-            <button class="log-btn btn-scene" style="width:100%; margin-bottom:15px;" onclick="openCrewModal()">+ ADD OPERATOR</button>
+            <button class="log-btn btn-scene" onclick="openModal('crewModal')">+ ADD OPERATOR</button>
             <div class="table-wrap">
-                <table>
-                    <thead><tr><th>Callsign</th><th>Currency</th><th>Action</th></tr></thead>
+                <table style="width:100%; text-align:left;" cellpadding="15">
+                    <thead><tr style="font-size:0.7rem; color:var(--safety-orange);"><th>CALLSIGN</th><th>STATUS</th><th>ACTION</th></tr></thead>
                     <tbody id="status-body"></tbody>
-                </table>
-            </div>
-        </div>
-
-        <div id="view-training" class="hidden">
-            <button class="log-btn btn-hq" style="width:100%; margin-bottom:15px;" onclick="openTrainModal()">+ LOG VR SESSION</button>
-            <div class="table-wrap">
-                <table>
-                    <thead><tr><th>Date</th><th>Op</th><th>Skill</th></tr></thead>
-                    <tbody id="train-log-body"></tbody>
                 </table>
             </div>
         </div>
@@ -124,50 +181,36 @@
 </div>
 
 <div id="crewModal" class="modal"><div class="modal-content">
-    <h3>Operator Config</h3>
-    <input type="text" id="c-name" placeholder="Full Name">
-    <input type="text" id="c-callsign" placeholder="Callsign">
-    <button class="log-btn btn-scene" style="width:100%" onclick="saveCrew()">SAVE</button>
-    <button class="log-btn btn-standby" style="width:100%; margin-top:10px;" onclick="closeModal('crewModal')">CANCEL</button>
-</div></div>
-
-<div id="trainModal" class="modal"><div class="modal-content">
-    <h3>Log VR Session</h3>
-    <input type="date" id="t-date">
-    <select id="t-op"></select>
-    <input type="text" id="t-skill" placeholder="Skill covered">
-    <button class="log-btn btn-hq" style="width:100%" onclick="saveTraining()">LOG SESSION</button>
-    <button class="log-btn btn-standby" style="width:100%; margin-top:10px;" onclick="closeModal('trainModal')">CANCEL</button>
+    <h3>New Operator</h3>
+    <input type="text" id="c-callsign" placeholder="Callsign (e.g. ALPHA)">
+    <button class="log-btn btn-scene" onclick="saveCrew()">ADD TO SQUAD</button>
+    <button class="log-btn btn-standby" onclick="closeModal('crewModal')">CANCEL</button>
 </div></div>
 
 <div id="kitModal" class="modal"><div class="modal-content">
-    <h3 id="kit-modal-title">Edit Loadout</h3>
-    <input type="hidden" id="k-op-idx">
-    <p style="font-size:0.8rem; color:#888;">Enter gear items (one per line):</p>
-    <textarea id="k-items" rows="10" placeholder="Example:&#10;MARCH Pouch&#10;Petzl I'D&#10;Edelrid Looper"></textarea>
-    <button class="log-btn btn-scene" style="width:100%" onclick="saveKit()">UPDATE LOADOUT</button>
-    <button class="log-btn btn-standby" style="width:100%; margin-top:10px;" onclick="closeModal('kitModal')">CANCEL</button>
+    <h3 id="kit-title-ui">Edit Kit</h3>
+    <input type="hidden" id="kit-op-idx">
+    <textarea id="kit-items-ui" rows="10"></textarea>
+    <button class="log-btn btn-scene" onclick="saveKit()">UPDATE</button>
+    <button class="log-btn btn-standby" onclick="closeModal('kitModal')">CANCEL</button>
 </div></div>
 
 <script>
-// Function to load data safely
-function loadData(key, defaultValue) {
-    const saved = localStorage.getItem(key);
-    try {
-        return saved ? JSON.parse(saved) : defaultValue;
-    } catch (e) {
-        console.error("Data corruption in " + key + ", resetting to default.");
-        return defaultValue;
-    }
-}
+    // Error Boundary
+    window.onerror = (m) => alert("Logic Error: " + m);
 
-// Global State - Loaded automatically
-let crew = loadData('rv_crew', [{name:"Lead", callsign:"ALPHA", kit: ["MARCH Module"]}]);
-let trainingLogs = loadData('rv_training', []);
-let opLogs = loadData('rv_op_logs', []);
-    let crew = JSON.parse(localStorage.getItem('rv_crew')) || [{name:"Lead", callsign:"ALPHA", kit: ["MARCH Module", "Mechanicals"]}];
-    let trainingLogs = JSON.parse(localStorage.getItem('rv_training')) || [];
+    // Constants
+    const rescueChecklists = {
+        roadcrash: { title: "Road Crash Rescue", items: ["Stabilization Set", "Glass Managed", "Power Isolated", "Space Creation", "Patient Shielded"] },
+        vertical: { title: "Vertical Rescue", items: ["Anchors Verified", "Edge Protection", "Main/Belay Synced", "Comms Check", "Harness Check"] }
+    };
+
+    // State Management
+    let crew = JSON.parse(localStorage.getItem('rv_crew')) || [{callsign:"ALPHA", kit:["MARCH Module"]}];
     let opLogs = JSON.parse(localStorage.getItem('rv_op_logs')) || [];
+    let smeacs = JSON.parse(localStorage.getItem('rv_smeacs')) || {s:"",m:"",e:"",a:"",c:"",safety:""};
+    let chkState = JSON.parse(localStorage.getItem('rv_chk_state')) || {roadcrash:{}, vertical:{}};
+    let currentChecklist = 'roadcrash';
 
     function toggleMenu() {
         document.getElementById('sidebar').classList.toggle('open');
@@ -179,110 +222,162 @@ let opLogs = loadData('rv_op_logs', []);
         document.getElementById('view-' + target).classList.remove('hidden');
         document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
         document.getElementById('nav-' + target).classList.add('active');
-        if (window.innerWidth <= 768) {
-            document.getElementById('sidebar').classList.remove('open');
-            document.getElementById('overlay').classList.remove('active');
-        }
-        document.getElementById('view-title').innerText = target.toUpperCase().replace('OPLOG', 'MISSION LOG');
+        document.getElementById('view-title').innerText = target.replace('oplog', 'mission log');
+        
+        if(target === 'smeacs') loadSmeacsUI();
+        if(target === 'checklists') renderChecklist(currentChecklist);
+        if(window.innerWidth < 768) toggleMenu();
         render();
     }
 
+    // Mission Log Logic
     function stamp(status) {
-        const now = new Date();
-        opLogs.unshift({ time: now.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit', second:'2-digit'}), status: status });
+        const time = new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+        opLogs.unshift({time, status});
         localStorage.setItem('rv_op_logs', JSON.stringify(opLogs));
         render();
     }
 
     function clearOpLog() {
-        if(confirm("Permanently clear mission log history?")) {
-            opLogs = [];
-            localStorage.setItem('rv_op_logs', JSON.stringify(opLogs));
-            render();
-        }
+        if(confirm("Wipe mission logs?")) { opLogs = []; localStorage.setItem('rv_op_logs', "[]"); render(); }
     }
 
-    // Modal Controls
-    function openCrewModal() { document.getElementById('crewModal').style.display = 'flex'; }
-    function openTrainModal() {
-        const select = document.getElementById('t-op');
-        select.innerHTML = crew.map(c => `<option value="${c.callsign}">${c.callsign}</option>`).join('');
-        document.getElementById('t-date').valueAsDate = new Date();
-        document.getElementById('trainModal').style.display = 'flex';
+    // SMEACS Logic
+    function saveSmeacs() {
+        smeacs = {
+            s: document.getElementById('sm-s').value,
+            m: document.getElementById('sm-m').value,
+            e: document.getElementById('sm-e').value,
+            a: document.getElementById('sm-a').value,
+            c: document.getElementById('sm-c').value,
+            safety: document.getElementById('sm-safety').value
+        };
+        localStorage.setItem('rv_smeacs', JSON.stringify(smeacs));
     }
-    function openKitModal(idx) {
-        document.getElementById('k-op-idx').value = idx;
-        document.getElementById('kit-modal-title').innerText = `Loadout: ${crew[idx].callsign}`;
-        document.getElementById('k-items').value = (crew[idx].kit || []).join('\n');
-        document.getElementById('kitModal').style.display = 'flex';
+
+    function loadSmeacsUI() {
+        document.getElementById('sm-s').value = smeacs.s;
+        document.getElementById('sm-m').value = smeacs.m;
+        document.getElementById('sm-e').value = smeacs.e;
+        document.getElementById('sm-a').value = smeacs.a;
+        document.getElementById('sm-c').value = smeacs.c;
+        document.getElementById('sm-safety').value = smeacs.safety;
     }
+
+    function clearSmeacs() { if(confirm("Clear brief?")) { smeacs={s:"",m:"",e:"",a:"",c:"",safety:""}; saveSmeacs(); loadSmeacsUI(); } }
+
+    // Checklist Logic
+    function renderChecklist(type) {
+        currentChecklist = type;
+        const data = rescueChecklists[type];
+        const container = document.getElementById('checklist-container');
+        const isLive = opLogs.length > 0 && opLogs[0].status !== 'AT HQ / SHUTDOWN';
+
+        container.innerHTML = `<div style="padding:15px; color:var(--safety-orange); font-weight:bold; border-bottom:1px solid #333;">${data.title} ${isLive ? '' : '(REF)'}</div>` + 
+            data.items.map((item, idx) => `
+            <div style="display:flex; align-items:center; padding:15px; border-bottom:1px solid #222;">
+                <input type="checkbox" style="width:22px; height:22px; margin-right:15px;" 
+                    ${chkState[type][idx] ? 'checked' : ''} 
+                    onchange="toggleCheck('${type}', ${idx})" ${isLive ? '' : 'disabled'}>
+                <span style="font-size:0.9rem;">${item}</span>
+            </div>
+        `).join('');
+    }
+
+    function toggleCheck(type, idx) {
+        chkState[type][idx] = !chkState[type][idx];
+        localStorage.setItem('rv_chk_state', JSON.stringify(chkState));
+    }
+
+    function resetChecklistData() {
+        if(confirm("Reset checks?")) { chkState[currentChecklist] = {}; localStorage.setItem('rv_chk_state', JSON.stringify(chkState)); renderChecklist(currentChecklist); }
+    }
+
+    // Crew & Kit Logic
+    function openModal(id) { document.getElementById(id).style.display = 'flex'; }
     function closeModal(id) { document.getElementById(id).style.display = 'none'; }
 
     function saveCrew() {
-        const call = document.getElementById('c-callsign').value.trim().toUpperCase();
-        if (!call) return;
-        crew.push({ name: document.getElementById('c-name').value, callsign: call, kit: ["Standard Issue"] });
+        const call = document.getElementById('c-callsign').value.toUpperCase();
+        if(!call) return;
+        crew.push({callsign: call, kit: ["Standard Issue"]});
         localStorage.setItem('rv_crew', JSON.stringify(crew));
         closeModal('crewModal');
         render();
     }
 
-    function saveTraining() {
-        const data = { date: document.getElementById('t-date').value, op: document.getElementById('t-op').value, skill: document.getElementById('t-skill').value };
-        trainingLogs.unshift(data);
-        localStorage.setItem('rv_training', JSON.stringify(trainingLogs));
-        closeModal('trainModal');
-        render();
+    function editKit(i) {
+        document.getElementById('kit-op-idx').value = i;
+        document.getElementById('kit-title-ui').innerText = crew[i].callsign + " KIT";
+        document.getElementById('kit-items-ui').value = crew[i].kit.join('\n');
+        openModal('kitModal');
     }
 
     function saveKit() {
-        const idx = document.getElementById('k-op-idx').value;
-        const items = document.getElementById('k-items').value.split('\n').filter(line => line.trim() !== "");
-        crew[idx].kit = items;
+        const i = document.getElementById('kit-op-idx').value;
+        crew[i].kit = document.getElementById('kit-items-ui').value.split('\n').filter(x => x.trim());
         localStorage.setItem('rv_crew', JSON.stringify(crew));
         closeModal('kitModal');
         render();
     }
 
-    function removeCrew(i) {
-        if(confirm("Remove operator?")) {
-            crew.splice(i, 1);
-            localStorage.setItem('rv_crew', JSON.stringify(crew));
-            render();
-        }
-    }
-
     function render() {
-        // Mission Log
-        document.getElementById('op-log-body').innerHTML = opLogs.length > 0 
-            ? opLogs.map(l => `<tr><td>${l.time}</td><td style="color:var(--safety-orange); font-weight:bold;">${l.status}</td></tr>`).join('')
-            : '<tr><td colspan="2" style="color:#555; text-align:center;">Log Empty</td></tr>';
+        // Log Render
+        document.getElementById('op-log-body').innerHTML = opLogs.map(l => 
+            `<tr style="border-bottom:1px solid #222;"><td style="padding:12px; font-size:0.7rem; color:#666;">${l.time}</td>
+            <td style="padding:12px; font-weight:bold; color:var(--safety-orange);">${l.status}</td></tr>`).join('');
 
-        // Squad Status
-        const sixMo = new Date(); sixMo.setMonth(sixMo.getMonth() - 6);
-        document.getElementById('status-body').innerHTML = crew.map((c, i) => {
-            const hasLog = trainingLogs.some(l => l.op === c.callsign && new Date(l.date) > sixMo);
-            return `<tr><td><strong>${c.callsign}</strong></td><td><span class="status-pill" style="background:${hasLog ? 'var(--success)' : 'var(--danger)'}"></span>${hasLog ? 'CUR' : 'EXP'}</td><td><button onclick="removeCrew(${i})" style="background:none; border:none; color:var(--danger); cursor:pointer;">DEL</button></td></tr>`;
-        }).join('');
+        // Squad Render
+        document.getElementById('status-body').innerHTML = crew.map((c, i) => `
+            <tr><td><strong>${c.callsign}</strong></td>
+            <td><span style="color:var(--success)">●</span> READY</td>
+            <td><button onclick="editKit(${i})" style="background:none; border:1px solid #444; color:#888; padding:4px 8px; border-radius:4px;">KIT</button></td></tr>
+        `).join('');
 
-        // Training Log
-        document.getElementById('train-log-body').innerHTML = trainingLogs.map(l => `<tr><td>${l.date}</td><td>${l.op}</td><td>${l.skill}</td></tr>`).join('');
-
-        // Kits (Dynamic List)
-        document.getElementById('kit-content').innerHTML = crew.map((c, i) => `
+        // Kit View Render
+        document.getElementById('kit-content').innerHTML = crew.map(c => `
             <div class="table-wrap">
-                <div style="padding:10px; background:#222; display:flex; justify-content:space-between; align-items:center;">
-                    <span style="font-size:0.75rem; color:var(--safety-orange); font-weight:bold;">${c.callsign} :: KIT</span>
-                    <button class="log-btn btn-hq" style="padding:4px 8px; font-size:0.6rem;" onclick="openKitModal(${i})">EDIT LOADOUT</button>
-                </div>
-                <table>
-                    ${(c.kit || ["No items"]).map(item => `<tr><td>${item}</td></tr>`).join('')}
-                </table>
+                <div style="padding:10px; background:#222; font-size:0.7rem; color:var(--safety-orange);">${c.callsign} LOADOUT</div>
+                <div style="padding:10px; font-size:0.85rem;">${c.kit.join('<br>')}</div>
             </div>
         `).join('');
     }
 
     window.onload = () => nav('oplog');
+function toggleMed(letter) {
+    const el = document.getElementById('med-' + letter);
+    el.classList.toggle('hidden');
+}
+
+// THE "STABILITY TEST" (Run on load)
+function runSystemTest() {
+    console.log("Starting System Test...");
+    const requiredViews = ['oplog', 'smeacs', 'checklists', 'dash', 'crew', 'medref'];
+    let errors = [];
+
+    requiredViews.forEach(v => {
+        if(!document.getElementById('view-' + v)) errors.push("Missing View: " + v);
+    });
+
+    try {
+        localStorage.setItem('rv_test', '1');
+        localStorage.removeItem('rv_test');
+    } catch(e) {
+        errors.push("LocalStorage is blocked or full.");
+    }
+
+    if(errors.length > 0) {
+        alert("CRITICAL ERRORS FOUND:\n" + errors.join('\n'));
+    } else {
+        console.log("System Stable.");
+    }
+}
+
+// Update your window.onload
+window.onload = () => {
+    runSystemTest();
+    nav('oplog'); 
+};
 </script>
 </body>
 </html>
