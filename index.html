@@ -3,36 +3,31 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>RescueLog Pro | Elite</title>
+    <title>RescueLog Pro | Casino Rescue Squad</title>
     <style>
         :root {
             --safety-orange: #FF6B00; --danger: #FF4444; --success: #00C851;
             --info: #0099CC; --dark-bg: #0d0d0d; --card-bg: #1a1a1a; --text: #eee;
-            --red-filter: none; --red-tint: transparent;
         }
-        /* Night Vision Mode */
         body.night-mode { --safety-orange: #ff0000; --info: #aa0000; --success: #880000; --text: #ff0000; }
-        body.night-mode .log-btn, body.night-mode .sidebar { border: 1px solid #ff0000 !important; }
-        body.night-mode #splash-screen, body.night-mode .sidebar-logo { filter: grayscale(1) sepia(1) hue-rotate(-50deg) saturate(5); }
+        body.night-mode .log-btn, body.night-mode .sidebar, body.night-mode .table-wrap { border: 1px solid #ff0000 !important; }
+        body.night-mode #splash-screen img, body.night-mode .sidebar-logo img { filter: grayscale(1) sepia(1) hue-rotate(-50deg) saturate(5); }
 
         body { font-family: 'Inter', sans-serif; background: var(--dark-bg); color: var(--text); margin: 0; display: flex; height: 100vh; overflow: hidden; transition: 0.3s; }
         
-        /* NEW: Splash Screen Styles */
         #splash-screen {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: #000; z-index: 9999; display: flex; align-items: center; justify-content: center;
+            background: #000; z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center;
             transition: opacity 0.8s ease, visibility 0.8s;
         }
-        #splash-screen img { width: 250px; height: auto; animation: pulse 2s infinite; }
-        @keyframes pulse { 0% { opacity: 0.5; } 50% { opacity: 1; } 100% { opacity: 0.5; } }
+        #splash-screen img { width: 220px; height: auto; border-radius: 20px; margin-bottom: 20px; }
         .splash-hidden { opacity: 0; visibility: hidden; }
 
-        /* NEW: Sidebar Logo Styles */
-        .sidebar-logo { padding: 20px 20px 0 20px; text-align: center; }
-        .sidebar-logo img { width: 120px; height: auto; border-radius: 10px; border: 1px solid #333; }
+        .sidebar-logo { padding: 25px 20px 10px 20px; text-align: center; border-bottom: 1px solid #222; }
+        .sidebar-logo img { width: 100px; height: auto; border-radius: 8px; }
 
         .sidebar { width: 260px; background: #000; border-right: 1px solid #333; display: flex; flex-direction: column; z-index: 1000; transition: transform 0.3s ease; }
-        .nav-brand { padding: 20px; font-weight: 800; color: var(--safety-orange); border-bottom: 1px solid #222; font-size: 0.8rem; letter-spacing: 1px; display:flex; justify-content: space-between; }
+        .nav-brand { padding: 15px 20px; font-weight: 800; color: var(--safety-orange); border-bottom: 1px solid #222; font-size: 0.75rem; letter-spacing: 1px; display:flex; justify-content: space-between; }
         .nav-item { padding: 15px 20px; cursor: pointer; color: #888; border-left: 4px solid transparent; font-size: 0.85rem; }
         .nav-item.active { color: #fff; background: #111; border-left-color: var(--safety-orange); }
 
@@ -47,38 +42,32 @@
         .btn-standby { background: #222; color: #888; border: 1px solid #333; }
         .btn-danger { background: transparent; color: var(--danger); border: 1px solid var(--danger) !important; }
         
-        .triage-card { padding: 15px; margin-bottom: 5px; font-weight: bold; text-align: center; border-radius: 4px; color: black; }
-        
-        textarea, input { width: 100%; background: #000; color: #fff; border: 1px solid #333; padding: 10px; border-radius: 4px; box-sizing: border-box; font-family: inherit; margin-top: 5px; }
+        textarea, input, select { width: 100%; background: #000; color: #fff; border: 1px solid #333; padding: 10px; border-radius: 4px; box-sizing: border-box; font-family: inherit; margin-top: 5px; }
         label { font-size: 0.65rem; font-weight: bold; color: var(--safety-orange); display: block; margin-top: 10px; text-transform: uppercase; }
         
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 2000; align-items: center; justify-content: center; padding: 20px; }
-        .modal-content { background: #1a1a1a; padding: 20px; border-radius: 8px; border: 1px solid var(--safety-orange); width: 100%; max-width: 500px; }
+        .modal-content { background: #1a1a1a; padding: 20px; border-radius: 8px; border: 1px solid var(--safety-orange); width: 100%; max-width: 500px; max-height: 80vh; overflow-y: auto; }
         
         .hidden { display: none !important; }
         @media (max-width: 768px) {
             .sidebar { position: fixed; height: 100%; transform: translateX(-100%); }
             .sidebar.open { transform: translateX(0); }
-            .hamburger { display: block !important; padding: 15px; background: #111; cursor: pointer; }
+            .hamburger { display: block !important; padding: 15px; background: #111; cursor: pointer; color: var(--safety-orange); }
         }
     </style>
 </head>
 <body>
 
-<div id="splash-screen">
-    <img src="1121.jpg" alt="Casino Rescue Squad">
-</div>
+<div id="splash-screen"><img src="1121.jpg"></div>
 
 <div id="sidebar" class="sidebar">
-    <div class="sidebar-logo">
-        <img src="1121.jpg" alt="Logo">
-    </div>
-    <div class="nav-brand">RESCUE COMMAND <span onclick="toggleNight()" style="cursor:pointer">👁️</span></div>
+    <div class="sidebar-logo"><img src="1121.jpg"></div>
+    <div class="nav-brand">CASINO RESCUE <span onclick="toggleNight()" style="cursor:pointer">👁️</span></div>
     <div id="nav-oplog" class="nav-item active" onclick="nav('oplog')">⏱️ MISSION LOG</div>
     <div id="nav-smeacs" class="nav-item" onclick="nav('smeacs')">📋 SMEACS BRIEF</div>
     <div id="nav-checklists" class="nav-item" onclick="nav('checklists')">✅ CHECKLISTS</div>
-    <div id="nav-dash" class="nav-item" onclick="nav('dash')">👥 SQUAD</div>
-    <div id="nav-medref" class="nav-item" onclick="nav('medref')">🏥 MEDICAL / TRIAGE</div>
+    <div id="nav-dash" class="nav-item" onclick="nav('dash')">👥 SQUAD & KITS</div>
+    <div id="nav-medref" class="nav-item" onclick="nav('medref')">🏥 MEDICAL / IMIST</div>
     <div id="nav-others" class="nav-item" onclick="nav('others')">📁 ALL OTHERS / MA</div>
 </div>
 
@@ -91,28 +80,28 @@
             <button class="log-btn btn-hq" onclick="stamp('DEPARTING HQ')">Departing HQ</button>
             <button class="log-btn btn-scene" onclick="stamp('ON SCENE')">On Scene</button>
             <button class="log-btn btn-scene" onclick="stamp('DEPARTING SCENE')">Departing Scene</button>
-            <button class="log-btn btn-standby" onclick="openHotDebrief()">Hot Debrief Checklist</button>
-            <button class="log-btn btn-hq" onclick="stamp('AT HQ / SHUTDOWN')">At HQ / Shutdown</button>
+            <button class="log-btn btn-standby" onclick="openHotDebrief()">Hot Debrief</button>
+<button class="log-btn btn-hq" onclick="stamp('AT HQ / SHUTTING DOWN')">At HQ / SHUTTING down</button>
             <div class="table-wrap"><table style="width:100%"><tbody id="op-log-body"></tbody></table></div>
-            <button class="log-btn btn-danger" onclick="clearLogs()">CLEAR MISSION LOG</button>
+            <button class="log-btn btn-danger" onclick="clearLogs()">CLEAR LOG</button>
         </div>
 
         <div id="view-smeacs" class="view-section hidden">
             <div class="table-wrap" style="padding:15px;">
-                <label>S / M / E / A / C / S</label>
-                <textarea id="sm-s" placeholder="Situation- Incident type/Loc/Time - No Cas/Hazards/Weather" oninput="saveSmeacs()"></textarea>
-                <textarea id="sm-m" placeholder="Mission- L.A.S.T -Locate/Access/Stabalise/Transport" oninput="saveSmeacs()"></textarea>
-                <textarea id="sm-e" placeholder="Execution- How it will be done" oninput="saveSmeacs()"></textarea>
-                <textarea id="sm-a" placeholder="Admin/Logistics- Cas Handling equipment/Other Resources" oninput="saveSmeacs()"></textarea>
-                <textarea id="sm-c" placeholder="Comms/Command- Police in Control- T/L for teams/Comm Ch/Backup Ch" oninput="saveSmeacs()"></textarea>
-                <textarea id="sm-safety" placeholder="Safety- Alternate Plans" style="border-color:var(--danger)" oninput="saveSmeacs()"></textarea>
+                <label>SMEACS BRIEFING</label>
+                <textarea id="sm-s" placeholder="Situation" oninput="saveSmeacs()"></textarea>
+                <textarea id="sm-m" placeholder="Mission (L.A.S.T)" oninput="saveSmeacs()"></textarea>
+                <textarea id="sm-e" placeholder="Execution" oninput="saveSmeacs()"></textarea>
+                <textarea id="sm-a" placeholder="Admin/Logistics" oninput="saveSmeacs()"></textarea>
+                <textarea id="sm-c" placeholder="Comms/Command" oninput="saveSmeacs()"></textarea>
+                <textarea id="sm-safety" placeholder="Safety/Alternates" oninput="saveSmeacs()"></textarea>
             </div>
         </div>
 
         <div id="view-checklists" class="view-section hidden">
             <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-bottom:15px;">
+                <button class="log-btn btn-hq" onclick="renderChecklist('vertical')">Vertical / ARCHER</button>
                 <button class="log-btn btn-hq" onclick="renderChecklist('roadcrash')">Road Crash</button>
-                <button class="log-btn btn-hq" onclick="renderChecklist('vertical')">Vertical</button>
                 <button class="log-btn btn-hq" onclick="renderChecklist('hazmat')">Hazmat</button>
                 <button class="log-btn btn-hq" onclick="renderChecklist('landzone')">Landing Zone</button>
             </div>
@@ -121,67 +110,83 @@
 
         <div id="view-dash" class="view-section hidden">
             <button class="log-btn btn-scene" onclick="addOperator()">+ ADD OPERATOR</button>
-            <div class="table-wrap"><table style="width:100%" cellpadding="15"><tbody id="status-body"></tbody></table></div>
+            <div id="squad-list"></div>
         </div>
 
         <div id="view-medref" class="view-section hidden">
+            <label>IMIST-AMBO HANDOVER</label>
+            <div class="table-wrap" style="padding:15px;">
+                <input type="text" id="im-i" placeholder="I - Identification (Age/Sex)">
+                <input type="text" id="im-m" placeholder="M - Mechanism of Injury">
+                <input type="text" id="im-inj" placeholder="I - Injuries (Head to Toe)">
+                <input type="text" id="im-s" placeholder="S - Signs (Vitals/GCS)">
+                <input type="text" id="im-t" placeholder="T - Treatment Given">
+                <input type="text" id="im-a" placeholder="A - Allergies">
+                <input type="text" id="im-med" placeholder="M - Medications">
+                <input type="text" id="im-b" placeholder="B - Background History">
+                <input type="text" id="im-o" placeholder="O - Other (Valuables/Next of Kin)">
+                <button class="log-btn btn-hq" style="margin-top:10px;" onclick="stampHandover()">STAMP HANDOVER TO LOG</button>
+            </div>
             <label>START TRIAGE GUIDE</label>
-            <div class="triage-card" style="background:var(--success)">GREEN: Walking Wounded</div>
-            <div class="triage-card" style="background:#FFD700">YELLOW: Delayed / Resp &lt; 30</div>
-            <div class="triage-card" style="background:var(--danger); color:white;">RED: Immediate / No Pulse / Unconscious</div>
+            <div class="triage-card" style="background:var(--success)">P3 - GREEN: Walking Wounded</div>
+            <div class="triage-card" style="background:#FFD700">P2 - YELLOW: Delayed / Resp &lt; 30</div>
+            <div class="triage-card" style="background:var(--danger); color:white;">P1 - RED: Immediate / No Pulse / Unconscious</div>
             <div class="triage-card" style="background:black; color:white; border:1px solid #333;">BLACK: Deceased</div>
-            
-            <label style="margin-top:20px;">MARCH PROTOCOL</label>
-            <div class="table-wrap" id="march-accordion"></div>
+            <label>MARCH PROTOCOL</label>
+            <div id="march-accordion" class="table-wrap"></div>
         </div>
 
         <div id="view-others" class="view-section hidden">
-            <div class="table-wrap" style="padding:15px; background:linear-gradient(45deg, #111, #222)">
+            <div class="table-wrap" style="padding:15px;">
                 <label>Mechanical Advantage Calc</label>
                 <div style="display:flex; gap:10px; margin-top:10px;">
-                    <input type="number" id="ma-input" placeholder="Weight (kg)" style="width:70%">
-                    <select id="ma-ratio" style="background:#000; color:#fff; border:1px solid #333; border-radius:4px;">
-                        <option value="3">3:1</option>
-                        <option value="5">5:1</option>
-                        <option value="9">9:1</option>
-                    </select>
+                    <input type="number" id="ma-input" placeholder="Weight (kg)">
+                    <select id="ma-ratio"><option value="3">3:1</option><option value="5">5:1</option><option value="9">9:1</option></select>
                 </div>
-                <button class="log-btn btn-hq" style="margin-top:10px;" onclick="calcMA()">Calculate Haul Force</button>
-                <div id="ma-result" style="font-size:0.8rem; margin-top:10px; color:var(--success)"></div>
+                <button class="log-btn btn-hq" onclick="calcMA()">Calculate Force</button>
+                <div id="ma-result" style="margin-top:10px; color:var(--success)"></div>
             </div>
-            <button class="log-btn btn-scene" onclick="openOtherModal()">+ ADD MANUAL PROTOCOL</button>
+            
+            <label>GEAR RETIREMENT LOG (3KG FOCUS)</label>
+            <div class="table-wrap" style="padding:15px;">
+                <input type="text" id="gear-name" placeholder="Item (e.g. 11mm Static Rope)">
+                <input type="date" id="gear-date">
+                <button class="log-btn btn-standby" onclick="addGear()">ADD GEAR ENTRY</button>
+                <div id="gear-list" style="margin-top:10px; font-size:0.8rem;"></div>
+            </div>
+            
+            <button class="log-btn btn-scene" onclick="openOtherModal()">+ MANUAL PROTOCOL</button>
             <div id="others-container"></div>
         </div>
     </div>
 </div>
 
 <div id="otherModal" class="modal"><div class="modal-content">
-    <h3 id="other-modal-title">MANUAL ENTRY</h3>
     <input type="text" id="other-title-input" placeholder="Title">
-    <textarea id="other-content-input" rows="8" placeholder="Manual steps..."></textarea>
+    <textarea id="other-content-input" rows="8" placeholder="Steps..."></textarea>
     <button class="log-btn btn-scene" onclick="saveOther()">SAVE</button>
     <button class="log-btn btn-standby" onclick="closeModals()">CLOSE</button>
 </div></div>
 
 <div id="hotDebriefModal" class="modal"><div class="modal-content">
     <h3 style="color:var(--danger)">HOT DEBRIEF</h3>
-    <p style="font-size:0.8rem">• Any immediate safety concerns?<br>• What was our biggest challenge?<br>• Is anyone feeling overwhelmed?<br>• Equipment damage to report?</p>
-    <textarea id="debrief-notes" placeholder="Notes for the log..."></textarea>
-    <button class="log-btn btn-scene" onclick="submitDebrief()">STAMP DEBRIEF TO LOG</button>
+    <p style="font-size:0.7rem">1. Immediate Safety Concerns?<br>2. Equipment damage?<br>3. Crew Welfare check?</p>
+    <textarea id="debrief-notes" placeholder="Notes..."></textarea>
+    <button class="log-btn btn-scene" onclick="submitDebrief()">LOG DEBRIEF</button>
     <button class="log-btn btn-standby" onclick="closeModals()">CLOSE</button>
 </div></div>
 
 <script>
-    let crew = JSON.parse(localStorage.getItem('rv_crew')) || [{callsign:"SHADOW", kit:["MARCH","IFAK", "Radio"]}];
     let opLogs = JSON.parse(localStorage.getItem('rv_op_logs')) || [];
-    let smeacs = JSON.parse(localStorage.getItem('rv_smeacs')) || {};
+    let crew = JSON.parse(localStorage.getItem('rv_crew')) || [{name: "JOHN DOE", callsign: "ALPHA-1", kit: "MARCH, Radio, TQ"}];
     let manualProtocols = JSON.parse(localStorage.getItem('rv_others')) || [];
+    let gearLog = JSON.parse(localStorage.getItem('rv_gear')) || [];
 
-    // Splash Screen Timer
-    window.addEventListener('load', function() {
-        setTimeout(function() {
-            document.getElementById('splash-screen').classList.add('splash-hidden');
-        }, 2500);
+    window.addEventListener('load', () => {
+        setTimeout(() => document.getElementById('splash-screen').classList.add('splash-hidden'), 2000);
+        render();
+        renderMarch();
+        if(window.innerWidth < 768) document.getElementById('ham-btn').style.display='block';
     });
 
     function nav(target) {
@@ -190,7 +195,6 @@
         document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
         document.getElementById('nav-' + target).classList.add('active');
         if(window.innerWidth < 768) document.getElementById('sidebar').classList.remove('open');
-        if(target === 'medref') renderMarch();
         render();
     }
 
@@ -205,15 +209,20 @@
         render();
     }
 
+    function stampHandover() {
+        const h = `IMIST-AMBO: ${document.getElementById('im-i').value} | Mech: ${document.getElementById('im-m').value} | Inj: ${document.getElementById('im-inj').value} | S: ${document.getElementById('im-s').value}`;
+        stamp(h);
+    }
+
     function renderChecklist(type) {
         const lists = {
-            roadcrash: ["Battery/Power Isolate", "Glass Mgmt", "Stabilization (Chocks)", "Hydraulic Tool Prep"],
-            vertical: ["Anchor Load Tested", "Edge Protection Set", "Main/Belay Synced", "Comms Check", "A.R.C.H.E.R"],
-            hazmat: ["Wind Direction Noted", "Exclusion Zone Set", "Decon Shower Prep", "PPE Level Check"],
-            landzone: ["100ft x 100ft Clear", "Slope < 10 deg", "Debris Removed", "Wind Indicator Set"]
+            vertical: ["A - Anchors Tested", "R - Ropes/Edges Clear", "C - Connections Locked", "H - Harness/Helmet Secure", "E - Energy/Rescuer Ready", "R - Redundancy/Belay Set"],
+            roadcrash: ["Power Isolate", "Stabilization", "Glass Mgmt", "Hydraulic Prep"],
+            hazmat: ["Wind Direction", "Exclusion Zone", "PPE Level Check"],
+            landzone: ["100x100 Clear", "Slope Check", "Debris Clear"]
         };
-        document.getElementById('checklist-container').innerHTML = `<div style="padding:15px; color:var(--safety-orange); font-weight:bold;">${type.toUpperCase()} CHECKLIST</div>` + 
-            lists[type].map(item => `<div style="padding:12px; border-top:1px solid #222;"><input type="checkbox" style="width:auto; margin-right:10px;"> ${item}</div>`).join('');
+        document.getElementById('checklist-container').innerHTML = `<div style="padding:15px; color:var(--safety-orange); font-weight:bold;">${type.toUpperCase()}</div>` + 
+            lists[type].map(i => `<div style="padding:12px; border-top:1px solid #222;"><input type="checkbox"> ${i}</div>`).join('');
     }
 
     function renderMarch() {
@@ -231,40 +240,62 @@
             </div>`).join('');
     }
 
-    function calcMA() {
-        const weight = document.getElementById('ma-input').value;
-        const ratio = document.getElementById('ma-ratio').value;
-        if(!weight) return;
-        const force = (weight / ratio).toFixed(1);
-        document.getElementById('ma-result').innerHTML = `Theoretical haul force: <strong>${force} kg</strong><br><small>*Does not account for friction.</small>`;
+    function addOperator() { 
+        const name = prompt("Name:");
+        const callsign = prompt("Callsign:"); 
+        if(name || callsign) { 
+            crew.push({name: name.toUpperCase(), callsign: callsign.toUpperCase(), kit:""}); 
+            render(); 
+        } 
     }
 
-    function openHotDebrief() { document.getElementById('hotDebriefModal').style.display = 'flex'; }
-    function submitDebrief() {
-        const notes = document.getElementById('debrief-notes').value;
-        stamp(`HOT DEBRIEF: ${notes}`);
-        closeModals();
+    function updateOperatorField(index, field, value) {
+        crew[index][field] = value;
+        localStorage.setItem('rv_crew', JSON.stringify(crew));
+    }
+
+    function addGear() {
+        const name = document.getElementById('gear-name').value;
+        const date = document.getElementById('gear-date').value;
+        if(name) { gearLog.push({name, date}); localStorage.setItem('rv_gear', JSON.stringify(gearLog)); render(); }
+    }
+
+    function calcMA() {
+        const w = document.getElementById('ma-input').value;
+        const r = document.getElementById('ma-ratio').value;
+        if(w) document.getElementById('ma-result').innerHTML = `Haul Force: ${(w/r).toFixed(1)}kg`;
     }
 
     function render() {
-        document.getElementById('op-log-body').innerHTML = opLogs.map(l => `<tr><td style="padding:10px; font-size:0.65rem; color:#666">${l.time}</td><td style="color:var(--safety-orange); font-weight:bold; font-size:0.85rem;">${l.status}</td></tr>`).join('');
-        document.getElementById('status-body').innerHTML = crew.map((c, i) => `<tr><td><strong>${c.callsign}</strong></td><td align="right"><button class="btn-standby" style="padding:5px 10px;" onclick="deleteOperator(${i})">DEL</button></td></tr>`).join('');
-        document.getElementById('others-container').innerHTML = manualProtocols.map((p, i) => `<div class="table-wrap" style="padding:15px;"><div style="color:var(--safety-orange); font-weight:bold;">${p.title}</div><div style="white-space:pre-wrap; font-size:0.8rem; margin-top:5px;">${p.content}</div></div>`).join('');
+        document.getElementById('op-log-body').innerHTML = opLogs.map(l => `<tr><td style="padding:10px; font-size:0.6rem; color:#666">${l.time}</td><td style="color:var(--safety-orange); font-weight:bold;">${l.status}</td></tr>`).join('');
+        
+        document.getElementById('squad-list').innerHTML = crew.map((c, i) => `
+            <div class="table-wrap" style="padding:15px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; border-bottom: 1px solid #222; padding-bottom:10px; margin-bottom:10px;">
+                    <strong style="color:var(--safety-orange)">OPERATOR ${i+1}</strong>
+                    <button class="btn-danger" style="padding:2px 10px; font-size:0.6rem" onclick="crew.splice(${i},1); render();">REMOVE</button>
+                </div>
+                <div style="display:flex; gap:10px;">
+                    <div style="flex:1"><label>FULL NAME</label><input type="text" oninput="updateOperatorField(${i}, 'name', this.value.toUpperCase())" value="${c.name || ''}" placeholder="NAME"></div>
+                    <div style="flex:1"><label>CALLSIGN</label><input type="text" oninput="updateOperatorField(${i}, 'callsign', this.value.toUpperCase())" value="${c.callsign || ''}" placeholder="CALLSIGN"></div>
+                </div>
+                <label>OPERATOR KIT LIST</label>
+                <textarea oninput="updateOperatorField(${i}, 'kit', this.value)" placeholder="Edit kit items...">${c.kit}</textarea>
+            </div>`).join('');
+
+        document.getElementById('gear-list').innerHTML = gearLog.map(g => `<div>• ${g.name} (Exp: ${g.date})</div>`).join('');
+        document.getElementById('others-container').innerHTML = manualProtocols.map(p => `<div class="table-wrap" style="padding:15px;"><strong>${p.title}</strong><br>${p.content}</div>`).join('');
     }
 
-    function clearLogs() { if(confirm("Wipe logs?")) { opLogs=[]; render(); } }
-    function addOperator() { const c = prompt("Callsign:"); if(c) { crew.push({callsign:c.toUpperCase(), kit:[]}); render(); } }
-    function deleteOperator(i) { crew.splice(i,1); render(); }
+    function openHotDebrief() { document.getElementById('hotDebriefModal').style.display = 'flex'; }
+    function submitDebrief() { stamp("DEBRIEF: " + document.getElementById('debrief-notes').value); closeModals(); }
     function openOtherModal() { document.getElementById('otherModal').style.display = 'flex'; }
-    function saveOther() { 
-        const title = document.getElementById('other-title-input').value;
-        const content = document.getElementById('other-content-input').value;
-        manualProtocols.push({title, content});
+    function saveOther() {
+        manualProtocols.push({title: document.getElementById('other-title-input').value, content: document.getElementById('other-content-input').value});
         localStorage.setItem('rv_others', JSON.stringify(manualProtocols));
         closeModals(); render();
     }
-
-    window.onload = render;
+    function clearLogs() { if(confirm("Wipe logs?")) { opLogs=[]; render(); } }
 </script>
 </body>
 </html>
