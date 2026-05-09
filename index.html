@@ -10,7 +10,7 @@
             --info: #0099CC; --dark-bg: #0d0d0d; --card-bg: #1a1a1a; --text: #eee;
         }
         body.night-mode { --safety-orange: #ff0000; --info: #aa0000; --success: #880000; --text: #ff0000; }
-        body.night-mode .log-btn, body.night-mode .sidebar, body.night-mode .table-wrap { border: 1px solid #ff0000 !important; }
+        body.night-mode .log-btn, body.night-mode .sidebar, body.night-mode .table-wrap, body.night-mode .avpu-btn { border: 1px solid #ff0000 !important; }
         body.night-mode #splash-screen img, body.night-mode .sidebar-logo img { filter: grayscale(1) sepia(1) hue-rotate(-50deg) saturate(5); }
 
         body { font-family: 'Inter', sans-serif; background: var(--dark-bg); color: var(--text); margin: 0; display: flex; height: 100vh; overflow: hidden; transition: 0.3s; }
@@ -42,13 +42,17 @@
         .btn-standby { background: #222; color: #888; border: 1px solid #333; }
         .btn-danger { background: transparent; color: var(--danger); border: 1px solid var(--danger) !important; }
         
+        .avpu-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; margin-top: 10px; }
+        .avpu-btn { background: #222; border: 1px solid #444; color: #888; padding: 10px 5px; border-radius: 4px; font-size: 0.7rem; font-weight: bold; cursor: pointer; text-align: center; }
+        .avpu-btn.active { background: var(--safety-orange); color: black; border-color: var(--safety-orange); }
+
         textarea, input, select { width: 100%; background: #000; color: #fff; border: 1px solid #333; padding: 10px; border-radius: 4px; box-sizing: border-box; font-family: inherit; margin-top: 5px; }
         label { font-size: 0.65rem; font-weight: bold; color: var(--safety-orange); display: block; margin-top: 10px; text-transform: uppercase; }
         
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 2000; align-items: center; justify-content: center; padding: 20px; }
         .modal-content { background: #1a1a1a; padding: 20px; border-radius: 8px; border: 1px solid var(--safety-orange); width: 100%; max-width: 500px; max-height: 80vh; overflow-y: auto; }
         
-        .triage-card { padding: 10px; margin-bottom: 5px; border-radius: 4px; font-weight: bold; color: black; }
+        .triage-card { padding: 10px; margin-bottom: 5px; border-radius: 4px; font-weight: bold; color: black; font-size: 0.75rem; }
 
         .hidden { display: none !important; }
         @media (max-width: 768px) {
@@ -91,12 +95,12 @@
         <div id="view-smeacs" class="view-section hidden">
             <div class="table-wrap" style="padding:15px;">
                 <label>SMEACS BRIEFING</label>
-                <textarea id="sm-s" placeholder="Situation" oninput="saveSmeacs()"></textarea>
-                <textarea id="sm-m" placeholder="Mission (L.A.S.T)" oninput="saveSmeacs()"></textarea>
-                <textarea id="sm-e" placeholder="Execution" oninput="saveSmeacs()"></textarea>
-                <textarea id="sm-a" placeholder="Admin/Logistics" oninput="saveSmeacs()"></textarea>
-                <textarea id="sm-c" placeholder="Comms/Command" oninput="saveSmeacs()"></textarea>
-                <textarea id="sm-safety" placeholder="Safety/Alternates" oninput="saveSmeacs()"></textarea>
+                <textarea id="sm-s" placeholder="Situation"></textarea>
+                <textarea id="sm-m" placeholder="Mission (L.A.S.T)"></textarea>
+                <textarea id="sm-e" placeholder="Execution"></textarea>
+                <textarea id="sm-a" placeholder="Admin/Logistics"></textarea>
+                <textarea id="sm-c" placeholder="Comms/Command"></textarea>
+                <textarea id="sm-safety" placeholder="Safety/Alternates"></textarea>
             </div>
         </div>
 
@@ -106,6 +110,7 @@
                 <button class="log-btn btn-hq" onclick="renderChecklist('roadcrash')">Road Crash</button>
                 <button class="log-btn btn-hq" onclick="renderChecklist('hazmat')">Hazmat</button>
                 <button class="log-btn btn-hq" onclick="renderChecklist('landzone')">Landing Zone</button>
+                <button class="log-btn btn-hq" style="grid-column: span 2;" onclick="renderChecklist('safetycheatsheet')">Safety Cheat Sheet</button>
             </div>
             <div id="checklist-container" class="table-wrap"></div>
         </div>
@@ -121,7 +126,16 @@
                 <input type="text" id="im-i" placeholder="I - Identification">
                 <input type="text" id="im-m" placeholder="M - Mechanism">
                 <input type="text" id="im-inj" placeholder="I - Injuries">
-                <input type="text" id="im-s" placeholder="S - Signs">
+                
+                <label>AVPU STATUS</label>
+                <div class="avpu-grid">
+                    <div class="avpu-btn" id="avpu-a" onclick="setAVPU('ALERT')">A</div>
+                    <div class="avpu-btn" id="avpu-v" onclick="setAVPU('VOICE')">V</div>
+                    <div class="avpu-btn" id="avpu-p" onclick="setAVPU('PAIN')">P</div>
+                    <div class="avpu-btn" id="avpu-u" onclick="setAVPU('UNRESPONSIVE')">U</div>
+                </div>
+                <input type="text" id="im-s" placeholder="S - Signs (AVPU/Vitals)">
+
                 <input type="text" id="im-t" placeholder="T - Treatment">
                 <input type="text" id="im-a" placeholder="A - Allergies">
                 <input type="text" id="im-med" placeholder="M - Medications">
@@ -129,25 +143,26 @@
                 <input type="text" id="im-o" placeholder="O - Other">
                 <button class="log-btn btn-hq" style="margin-top:10px;" onclick="stampHandover()">STAMP HANDOVER</button>
             </div>
-            <label>TRIAGE GUIDE</label>
+
+            <label>START TRIAGE GUIDE</label>
             <div class="triage-card" style="background:var(--success)">P3 - GREEN: Walking</div>
             <div class="triage-card" style="background:#FFD700">P2 - YELLOW: Delayed</div>
-            <div class="triage-card" style="background:var(--danger); color:white;">P1 - RED: Immediate</div>
+            <div class="triage-card" style="background:var(--danger); color:white;">P1 - RED: Immediate (No Resp/Pulse)</div>
             <div class="triage-card" style="background:black; color:white; border:1px solid #333;">BLACK: Deceased</div>
+            
             <label>MARCH PROTOCOL</label>
             <div id="march-accordion" class="table-wrap"></div>
         </div>
 
         <div id="view-others" class="view-section hidden">
-            <div class="table-wrap" style="padding:15px; border: 2px solid var(--info);">
-                <label style="color:var(--info)">SYSTEM DATA BACKUP</label>
-                <p style="font-size:0.65rem; color:#aaa; margin:5px 0;">Use this to save data before updating the app code.</p>
+            <div class="table-wrap" style="padding:15px; border: 1px solid var(--info);">
+                <label style="color:var(--info)">DATA BACKUP (SAVE BEFORE UPDATING)</label>
                 <button class="log-btn btn-hq" onclick="exportData()">DOWNLOAD BACKUP (.JSON)</button>
-                <label>RESTORE FROM BACKUP</label>
-                <input type="file" id="importFile" onchange="importData(event)" style="font-size:0.7rem; border:1px dashed var(--info); padding:10px;">
+                <label>RESTORE DATA</label>
+                <input type="file" id="importFile" onchange="importData(event)">
             </div>
 
-            <div class="table-wrap" style="padding:15px;">
+            <div class="table-wrap" style="padding:15px; margin-top:10px;">
                 <label>Mechanical Advantage Calc</label>
                 <div style="display:flex; gap:10px; margin-top:10px;">
                     <input type="number" id="ma-input" placeholder="Weight (kg)">
@@ -198,45 +213,40 @@
         if(window.innerWidth < 768) document.getElementById('ham-btn').style.display='block';
     });
 
-    // --- DATA EXPORT / IMPORT LOGIC ---
+    function setAVPU(val) {
+        document.querySelectorAll('.avpu-btn').forEach(b => b.classList.remove('active'));
+        const btnId = 'avpu-' + val.charAt(0).toLowerCase();
+        document.getElementById(btnId).classList.add('active');
+        document.getElementById('im-s').value = `AVPU: ${val}`;
+    }
+
     function exportData() {
         const data = {
-            logs: opLogs,
-            crew: crew,
-            others: manualProtocols,
-            gear: gearLog,
+            logs: opLogs, crew, others: manualProtocols, gear: gearLog,
             smeacs: {
-                s: document.getElementById('sm-s').value,
-                m: document.getElementById('sm-m').value,
-                e: document.getElementById('sm-e').value,
-                a: document.getElementById('sm-a').value,
-                c: document.getElementById('sm-c').value,
-                safety: document.getElementById('sm-safety').value
+                s: document.getElementById('sm-s').value, m: document.getElementById('sm-m').value,
+                e: document.getElementById('sm-e').value, a: document.getElementById('sm-a').value,
+                c: document.getElementById('sm-c').value, safety: document.getElementById('sm-safety').value
             }
         };
         const blob = new Blob([JSON.stringify(data)], {type: "application/json"});
-        const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
-        a.href = url;
+        a.href = URL.createObjectURL(blob);
         a.download = `RescueBackup_${new Date().getTime()}.json`;
         a.click();
     }
 
     function importData(event) {
         const reader = new FileReader();
-        reader.onload = function(e) {
+        reader.onload = (e) => {
             const data = JSON.parse(e.target.result);
-            if(confirm("Restore data? This will overwrite current entries.")) {
-                opLogs = data.logs || [];
-                crew = data.crew || [];
-                manualProtocols = data.others || [];
-                gearLog = data.gear || [];
-                
+            if(confirm("Overwrite current data with this backup?")) {
+                opLogs = data.logs || []; crew = data.crew || [];
+                manualProtocols = data.others || []; gearLog = data.gear || [];
                 localStorage.setItem('rv_op_logs', JSON.stringify(opLogs));
                 localStorage.setItem('rv_crew', JSON.stringify(crew));
                 localStorage.setItem('rv_others', JSON.stringify(manualProtocols));
                 localStorage.setItem('rv_gear', JSON.stringify(gearLog));
-
                 if(data.smeacs) {
                     document.getElementById('sm-s').value = data.smeacs.s || "";
                     document.getElementById('sm-m').value = data.smeacs.m || "";
@@ -246,14 +256,9 @@
                     document.getElementById('sm-safety').value = data.smeacs.safety || "";
                 }
                 render();
-                alert("Data Restored Successfully.");
             }
         };
         reader.readAsText(event.target.files[0]);
-    }
-
-    function saveSmeacs() {
-        // Just keeping the UI responsive, logic for save is in the export
     }
 
     function nav(target) {
@@ -277,18 +282,32 @@
     }
 
     function stampHandover() {
-        const h = `HANDOVER: ID: ${document.getElementById('im-i').value} | MECH: ${document.getElementById('im-m').value} | INJ: ${document.getElementById('im-inj').value}`;
+        const h = `HANDOVER: ID: ${document.getElementById('im-i').value} | MECH: ${document.getElementById('im-m').value} | SIGNS: ${document.getElementById('im-s').value}`;
         stamp(h);
     }
 
     function renderChecklist(type) {
         const lists = {
-            vertical: ["A - Anchors Tested", "R - Ropes/Edges Clear", "C - Connections Locked", "H - Harness/Helmet Secure", "E - Energy/Rescuer Ready", "R - Redundancy Set"],
+            safetycheatsheet: [
+                "FALL FACTOR: (Dist Fallen / Rope Length) | Limit: >0.2 = HIGH IMPACT",
+                "ANGLE LOADING: 120° Angle = 100% Load on EACH Anchor",
+                "VITAL SIGNS (Adult): HR: 60-100 | RR: 12-20 | BP: 120/80"
+            ],
+            vertical: ["A - Anchors Tested", "R - Ropes Clear", "C - Connections Locked", "H - Harness/Helmet", "E - Energy Ready", "R - Redundancy"],
             roadcrash: ["Power Isolate", "Stabilization", "Glass Mgmt", "Hydraulic Prep"],
-            hazmat: ["Wind Direction", "Exclusion Zone", "PPE Level Check"],
-            landzone: ["100x100 Clear", "Slope Check", "Debris Clear"]
+            hazmat: ["Wind Direction", "Exclusion Zone", "PPE Level"],
+            landzone: [
+                "SIZE: 30m x 30m (100ft) minimum",
+                "SLOPE: Level ground (less than 5-10°)",
+                "DEBRIS: Clear of cones, loose gear, or plastic",
+                "SECURITY: Crowd control established",
+                "WIND: Direction identified for pilot",
+                "OBSTACLES: Wires/Poles identified"
+            ]
         };
-        document.getElementById('checklist-container').innerHTML = `<div style="padding:15px; color:var(--safety-orange); font-weight:bold;">${type.toUpperCase()}</div>` + 
+        
+        document.getElementById('checklist-container').innerHTML = 
+            `<div style="padding:15px; color:var(--safety-orange); font-weight:bold;">${type.toUpperCase()}</div>` + 
             lists[type].map(i => `<div style="padding:12px; border-top:1px solid #222;"><input type="checkbox"> ${i}</div>`).join('');
     }
 
@@ -296,9 +315,9 @@
         const march = [
             {l:"M", t:"HEMORRHAGE", c:"TQ High/Tight. Wound Packing."},
             {l:"A", t:"AIRWAY", c:"Head Tilt/Chin Lift. NPA/OPA."},
-            {l:"R", t:"RESPIRATIONS", c:"Chest Seals. Needle Decompression."},
+            {l:"R", t:"RESPIRATIONS", c:"Chest Seals. Needle Decompress."},
             {l:"C", t:"CIRCULATION", c:"Radial Pulses. Fluid Resus."},
-            {l:"H", t:"HYPOTHERMIA", c:"Space Blankets. GCS check."}
+            {l:"H", t:"HYPOTHERMIA", c:"Space Blankets. AVPU check."}
         ];
         document.getElementById('march-accordion').innerHTML = march.map(m => `
             <div style="padding:12px; border-bottom:1px solid #222">
@@ -321,16 +340,16 @@
         localStorage.setItem('rv_crew', JSON.stringify(crew));
     }
 
-    function addGear() {
-        const name = document.getElementById('gear-name').value;
-        const date = document.getElementById('gear-date').value;
-        if(name) { gearLog.push({name, date}); localStorage.setItem('rv_gear', JSON.stringify(gearLog)); render(); }
-    }
-
     function calcMA() {
         const w = document.getElementById('ma-input').value;
         const r = document.getElementById('ma-ratio').value;
         if(w) document.getElementById('ma-result').innerHTML = `Haul Force: ${(w/r).toFixed(1)}kg`;
+    }
+
+    function addGear() {
+        const name = document.getElementById('gear-name').value;
+        const date = document.getElementById('gear-date').value;
+        if(name) { gearLog.push({name, date}); localStorage.setItem('rv_gear', JSON.stringify(gearLog)); render(); }
     }
 
     function render() {
@@ -338,7 +357,7 @@
         
         document.getElementById('squad-list').innerHTML = crew.map((c, i) => `
             <div class="table-wrap" style="padding:15px;">
-                <div style="display:flex; justify-content:space-between; align-items:center; border-bottom: 1px solid #222; padding-bottom:10px; margin-bottom:10px;">
+                <div style="display:flex; justify-content:space-between; border-bottom: 1px solid #222; padding-bottom:5px; margin-bottom:5px;">
                     <strong style="color:var(--safety-orange)">OPERATOR ${i+1}</strong>
                     <button class="btn-danger" style="padding:2px 10px; font-size:0.6rem" onclick="crew.splice(${i},1); render();">REMOVE</button>
                 </div>
