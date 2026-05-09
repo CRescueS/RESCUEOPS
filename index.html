@@ -48,6 +48,8 @@
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 2000; align-items: center; justify-content: center; padding: 20px; }
         .modal-content { background: #1a1a1a; padding: 20px; border-radius: 8px; border: 1px solid var(--safety-orange); width: 100%; max-width: 500px; max-height: 80vh; overflow-y: auto; }
         
+        .triage-card { padding: 10px; margin-bottom: 5px; border-radius: 4px; font-weight: bold; color: black; }
+
         .hidden { display: none !important; }
         @media (max-width: 768px) {
             .sidebar { position: fixed; height: 100%; transform: translateX(-100%); }
@@ -81,7 +83,7 @@
             <button class="log-btn btn-scene" onclick="stamp('ON SCENE')">On Scene</button>
             <button class="log-btn btn-scene" onclick="stamp('DEPARTING SCENE')">Departing Scene</button>
             <button class="log-btn btn-standby" onclick="openHotDebrief()">Hot Debrief</button>
-<button class="log-btn btn-hq" onclick="stamp('AT HQ / SHUTTING DOWN')">At HQ / SHUTTING down</button>
+            <button class="log-btn btn-hq" onclick="stamp('AT HQ / SHUTTING DOWN')">At HQ / SHUTTING down</button>
             <div class="table-wrap"><table style="width:100%"><tbody id="op-log-body"></tbody></table></div>
             <button class="log-btn btn-danger" onclick="clearLogs()">CLEAR LOG</button>
         </div>
@@ -116,27 +118,35 @@
         <div id="view-medref" class="view-section hidden">
             <label>IMIST-AMBO HANDOVER</label>
             <div class="table-wrap" style="padding:15px;">
-                <input type="text" id="im-i" placeholder="I - Identification (Age/Sex)">
-                <input type="text" id="im-m" placeholder="M - Mechanism of Injury">
-                <input type="text" id="im-inj" placeholder="I - Injuries (Head to Toe)">
-                <input type="text" id="im-s" placeholder="S - Signs (Vitals/GCS)">
-                <input type="text" id="im-t" placeholder="T - Treatment Given">
+                <input type="text" id="im-i" placeholder="I - Identification">
+                <input type="text" id="im-m" placeholder="M - Mechanism">
+                <input type="text" id="im-inj" placeholder="I - Injuries">
+                <input type="text" id="im-s" placeholder="S - Signs">
+                <input type="text" id="im-t" placeholder="T - Treatment">
                 <input type="text" id="im-a" placeholder="A - Allergies">
                 <input type="text" id="im-med" placeholder="M - Medications">
-                <input type="text" id="im-b" placeholder="B - Background History">
-                <input type="text" id="im-o" placeholder="O - Other (Valuables/Next of Kin)">
-                <button class="log-btn btn-hq" style="margin-top:10px;" onclick="stampHandover()">STAMP HANDOVER TO LOG</button>
+                <input type="text" id="im-b" placeholder="B - Background">
+                <input type="text" id="im-o" placeholder="O - Other">
+                <button class="log-btn btn-hq" style="margin-top:10px;" onclick="stampHandover()">STAMP HANDOVER</button>
             </div>
-            <label>START TRIAGE GUIDE</label>
-            <div class="triage-card" style="background:var(--success)">P3 - GREEN: Walking Wounded</div>
-            <div class="triage-card" style="background:#FFD700">P2 - YELLOW: Delayed / Resp &lt; 30</div>
-            <div class="triage-card" style="background:var(--danger); color:white;">P1 - RED: Immediate / No Pulse / Unconscious</div>
+            <label>TRIAGE GUIDE</label>
+            <div class="triage-card" style="background:var(--success)">P3 - GREEN: Walking</div>
+            <div class="triage-card" style="background:#FFD700">P2 - YELLOW: Delayed</div>
+            <div class="triage-card" style="background:var(--danger); color:white;">P1 - RED: Immediate</div>
             <div class="triage-card" style="background:black; color:white; border:1px solid #333;">BLACK: Deceased</div>
             <label>MARCH PROTOCOL</label>
             <div id="march-accordion" class="table-wrap"></div>
         </div>
 
         <div id="view-others" class="view-section hidden">
+            <div class="table-wrap" style="padding:15px; border: 2px solid var(--info);">
+                <label style="color:var(--info)">SYSTEM DATA BACKUP</label>
+                <p style="font-size:0.65rem; color:#aaa; margin:5px 0;">Use this to save data before updating the app code.</p>
+                <button class="log-btn btn-hq" onclick="exportData()">DOWNLOAD BACKUP (.JSON)</button>
+                <label>RESTORE FROM BACKUP</label>
+                <input type="file" id="importFile" onchange="importData(event)" style="font-size:0.7rem; border:1px dashed var(--info); padding:10px;">
+            </div>
+
             <div class="table-wrap" style="padding:15px;">
                 <label>Mechanical Advantage Calc</label>
                 <div style="display:flex; gap:10px; margin-top:10px;">
@@ -147,9 +157,9 @@
                 <div id="ma-result" style="margin-top:10px; color:var(--success)"></div>
             </div>
             
-            <label>GEAR RETIREMENT LOG (3KG FOCUS)</label>
+            <label>GEAR RETIREMENT LOG</label>
             <div class="table-wrap" style="padding:15px;">
-                <input type="text" id="gear-name" placeholder="Item (e.g. 11mm Static Rope)">
+                <input type="text" id="gear-name" placeholder="Item Name">
                 <input type="date" id="gear-date">
                 <button class="log-btn btn-standby" onclick="addGear()">ADD GEAR ENTRY</button>
                 <div id="gear-list" style="margin-top:10px; font-size:0.8rem;"></div>
@@ -170,7 +180,6 @@
 
 <div id="hotDebriefModal" class="modal"><div class="modal-content">
     <h3 style="color:var(--danger)">HOT DEBRIEF</h3>
-    <p style="font-size:0.7rem">1. Immediate Safety Concerns?<br>2. Equipment damage?<br>3. Crew Welfare check?</p>
     <textarea id="debrief-notes" placeholder="Notes..."></textarea>
     <button class="log-btn btn-scene" onclick="submitDebrief()">LOG DEBRIEF</button>
     <button class="log-btn btn-standby" onclick="closeModals()">CLOSE</button>
@@ -178,7 +187,7 @@
 
 <script>
     let opLogs = JSON.parse(localStorage.getItem('rv_op_logs')) || [];
-    let crew = JSON.parse(localStorage.getItem('rv_crew')) || [{name: "JOHN DOE", callsign: "ALPHA-1", kit: "MARCH, Radio, TQ"}];
+    let crew = JSON.parse(localStorage.getItem('rv_crew')) || [{name: "JOHN DOE", callsign: "ALPHA-1", kit: ""}];
     let manualProtocols = JSON.parse(localStorage.getItem('rv_others')) || [];
     let gearLog = JSON.parse(localStorage.getItem('rv_gear')) || [];
 
@@ -188,6 +197,64 @@
         renderMarch();
         if(window.innerWidth < 768) document.getElementById('ham-btn').style.display='block';
     });
+
+    // --- DATA EXPORT / IMPORT LOGIC ---
+    function exportData() {
+        const data = {
+            logs: opLogs,
+            crew: crew,
+            others: manualProtocols,
+            gear: gearLog,
+            smeacs: {
+                s: document.getElementById('sm-s').value,
+                m: document.getElementById('sm-m').value,
+                e: document.getElementById('sm-e').value,
+                a: document.getElementById('sm-a').value,
+                c: document.getElementById('sm-c').value,
+                safety: document.getElementById('sm-safety').value
+            }
+        };
+        const blob = new Blob([JSON.stringify(data)], {type: "application/json"});
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `RescueBackup_${new Date().getTime()}.json`;
+        a.click();
+    }
+
+    function importData(event) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const data = JSON.parse(e.target.result);
+            if(confirm("Restore data? This will overwrite current entries.")) {
+                opLogs = data.logs || [];
+                crew = data.crew || [];
+                manualProtocols = data.others || [];
+                gearLog = data.gear || [];
+                
+                localStorage.setItem('rv_op_logs', JSON.stringify(opLogs));
+                localStorage.setItem('rv_crew', JSON.stringify(crew));
+                localStorage.setItem('rv_others', JSON.stringify(manualProtocols));
+                localStorage.setItem('rv_gear', JSON.stringify(gearLog));
+
+                if(data.smeacs) {
+                    document.getElementById('sm-s').value = data.smeacs.s || "";
+                    document.getElementById('sm-m').value = data.smeacs.m || "";
+                    document.getElementById('sm-e').value = data.smeacs.e || "";
+                    document.getElementById('sm-a').value = data.smeacs.a || "";
+                    document.getElementById('sm-c').value = data.smeacs.c || "";
+                    document.getElementById('sm-safety').value = data.smeacs.safety || "";
+                }
+                render();
+                alert("Data Restored Successfully.");
+            }
+        };
+        reader.readAsText(event.target.files[0]);
+    }
+
+    function saveSmeacs() {
+        // Just keeping the UI responsive, logic for save is in the export
+    }
 
     function nav(target) {
         document.querySelectorAll('.view-section').forEach(v => v.classList.add('hidden'));
@@ -210,13 +277,13 @@
     }
 
     function stampHandover() {
-        const h = `IMIST-AMBO: ${document.getElementById('im-i').value} | Mech: ${document.getElementById('im-m').value} | Inj: ${document.getElementById('im-inj').value} | S: ${document.getElementById('im-s').value}`;
+        const h = `HANDOVER: ID: ${document.getElementById('im-i').value} | MECH: ${document.getElementById('im-m').value} | INJ: ${document.getElementById('im-inj').value}`;
         stamp(h);
     }
 
     function renderChecklist(type) {
         const lists = {
-            vertical: ["A - Anchors Tested", "R - Ropes/Edges Clear", "C - Connections Locked", "H - Harness/Helmet Secure", "E - Energy/Rescuer Ready", "R - Redundancy/Belay Set"],
+            vertical: ["A - Anchors Tested", "R - Ropes/Edges Clear", "C - Connections Locked", "H - Harness/Helmet Secure", "E - Energy/Rescuer Ready", "R - Redundancy Set"],
             roadcrash: ["Power Isolate", "Stabilization", "Glass Mgmt", "Hydraulic Prep"],
             hazmat: ["Wind Direction", "Exclusion Zone", "PPE Level Check"],
             landzone: ["100x100 Clear", "Slope Check", "Debris Clear"]
@@ -227,11 +294,11 @@
 
     function renderMarch() {
         const march = [
-            {l:"M", t:"MASSIVE HEMORRHAGE", c:"TQ High/Tight. Wound Packing."},
+            {l:"M", t:"HEMORRHAGE", c:"TQ High/Tight. Wound Packing."},
             {l:"A", t:"AIRWAY", c:"Head Tilt/Chin Lift. NPA/OPA."},
             {l:"R", t:"RESPIRATIONS", c:"Chest Seals. Needle Decompression."},
             {l:"C", t:"CIRCULATION", c:"Radial Pulses. Fluid Resus."},
-            {l:"H", t:"HYPOTHERMIA / HEAD", c:"Space Blankets. GCS check."}
+            {l:"H", t:"HYPOTHERMIA", c:"Space Blankets. GCS check."}
         ];
         document.getElementById('march-accordion').innerHTML = march.map(m => `
             <div style="padding:12px; border-bottom:1px solid #222">
@@ -240,13 +307,13 @@
             </div>`).join('');
     }
 
-    function addOperator() { 
+    function addOperator() {
         const name = prompt("Name:");
-        const callsign = prompt("Callsign:"); 
-        if(name || callsign) { 
-            crew.push({name: name.toUpperCase(), callsign: callsign.toUpperCase(), kit:""}); 
-            render(); 
-        } 
+        const callsign = prompt("Callsign:");
+        if(name || callsign) {
+            crew.push({name: name.toUpperCase(), callsign: callsign.toUpperCase(), kit:""});
+            render();
+        }
     }
 
     function updateOperatorField(index, field, value) {
@@ -276,11 +343,11 @@
                     <button class="btn-danger" style="padding:2px 10px; font-size:0.6rem" onclick="crew.splice(${i},1); render();">REMOVE</button>
                 </div>
                 <div style="display:flex; gap:10px;">
-                    <div style="flex:1"><label>FULL NAME</label><input type="text" oninput="updateOperatorField(${i}, 'name', this.value.toUpperCase())" value="${c.name || ''}" placeholder="NAME"></div>
-                    <div style="flex:1"><label>CALLSIGN</label><input type="text" oninput="updateOperatorField(${i}, 'callsign', this.value.toUpperCase())" value="${c.callsign || ''}" placeholder="CALLSIGN"></div>
+                    <div style="flex:1"><label>NAME</label><input type="text" oninput="updateOperatorField(${i}, 'name', this.value.toUpperCase())" value="${c.name || ''}"></div>
+                    <div style="flex:1"><label>CALLSIGN</label><input type="text" oninput="updateOperatorField(${i}, 'callsign', this.value.toUpperCase())" value="${c.callsign || ''}"></div>
                 </div>
-                <label>OPERATOR KIT LIST</label>
-                <textarea oninput="updateOperatorField(${i}, 'kit', this.value)" placeholder="Edit kit items...">${c.kit}</textarea>
+                <label>KIT LIST</label>
+                <textarea oninput="updateOperatorField(${i}, 'kit', this.value)">${c.kit}</textarea>
             </div>`).join('');
 
         document.getElementById('gear-list').innerHTML = gearLog.map(g => `<div>• ${g.name} (Exp: ${g.date})</div>`).join('');
