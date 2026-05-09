@@ -60,14 +60,34 @@
             .sidebar.open { transform: translateX(0); }
             .hamburger { display: block !important; padding: 15px; background: #111; cursor: pointer; color: var(--safety-orange); }
         }
+        #airway-alert { 
+            display: none; 
+            font-size: 0.7rem; 
+            background: white; 
+            color: red; 
+            padding: 2px 5px; 
+            border-radius: 3px; 
+            margin-left: 10px;
+        }
+        .gcs-warning { color: orange !important; }
+        .gcs-critical { 
+            color: #ff0000 !important; 
+            animation: flash-red 0.8s infinite; 
+            font-weight: 900;
+        }
+        @keyframes flash-red {
+            0% { opacity: 1; }
+            50% { opacity: 0.3; }
+            100% { opacity: 1; }
+        }  
     </style>
 </head>
 <body>
 
-<div id="splash-screen"><img src="1121.jpg"></div>
+<div id="splash-screen"><img src="1121.jpg" alt="Logo"></div>
 
 <div id="sidebar" class="sidebar">
-    <div class="sidebar-logo"><img src="1121.jpg"></div>
+    <div class="sidebar-logo"><img src="1121.jpg" alt="Logo"></div>
     <div class="nav-brand">CASINO RESCUE <span onclick="toggleNight()" style="cursor:pointer">👁️</span></div>
     <div id="nav-oplog" class="nav-item active" onclick="nav('oplog')">⏱️ MISSION LOG</div>
     <div id="nav-smeacs" class="nav-item" onclick="nav('smeacs')">📋 SMEACS BRIEF</div>
@@ -135,13 +155,59 @@
                     <div class="avpu-btn" id="avpu-u" onclick="setAVPU('UNRESPONSIVE')">U</div>
                 </div>
                 <input type="text" id="im-s" placeholder="S - Signs (AVPU/Vitals)">
-
                 <input type="text" id="im-t" placeholder="T - Treatment">
                 <input type="text" id="im-a" placeholder="A - Allergies">
                 <input type="text" id="im-med" placeholder="M - Medications">
                 <input type="text" id="im-b" placeholder="B - Background">
                 <input type="text" id="im-o" placeholder="O - Other">
                 <button class="log-btn btn-hq" style="margin-top:10px;" onclick="stampHandover()">STAMP HANDOVER</button>
+            </div>
+
+            <label>GLASGOW COMA SCALE (GCS)</label>
+            <div class="table-wrap" style="padding:10px;">
+                <div style="font-size: 0.8rem; margin-bottom: 5px;">
+                    Total Score: <span id="gcs-total" style="color:var(--safety-orange); font-weight:bold;">15</span> 
+                    <span id="airway-alert">PROTECT AIRWAY</span>
+                </div>
+                <div class="avpu-grid" id="gcs-eyes">
+                    <div class="avpu-btn active" onclick="setGCS('eyes', 4, this)">E4</div>
+                    <div class="avpu-btn" onclick="setGCS('eyes', 3, this)">E3</div>
+                    <div class="avpu-btn" onclick="setGCS('eyes', 2, this)">E2</div>
+                    <div class="avpu-btn" onclick="setGCS('eyes', 1, this)">E1</div>
+                </div>
+                <div class="avpu-grid" style="margin-top:5px;" id="gcs-verbal">
+                    <div class="avpu-btn active" onclick="setGCS('verbal', 5, this)">V5</div>
+                    <div class="avpu-btn" onclick="setGCS('verbal', 4, this)">V4</div>
+                    <div class="avpu-btn" onclick="setGCS('verbal', 3, this)">V3</div>
+                    <div class="avpu-btn" onclick="setGCS('verbal', 2, this)">V2</div>
+                    <div class="avpu-btn" onclick="setGCS('verbal', 1, this)">V1</div>
+                </div>
+                <div class="avpu-grid" style="margin-top:5px;" id="gcs-motor">
+                    <div class="avpu-btn active" onclick="setGCS('motor', 6, this)">M6</div>
+                    <div class="avpu-btn" onclick="setGCS('motor', 5, this)">M5</div>
+                    <div class="avpu-btn" onclick="setGCS('motor', 4, this)">M4</div>
+                    <div class="avpu-btn" onclick="setGCS('motor', 3, this)">M3</div>
+                    <div class="avpu-btn" onclick="setGCS('motor', 2, this)">M2</div>
+                    <div class="avpu-btn" onclick="setGCS('motor', 1, this)">M1</div>
+                </div>
+            </div>
+
+            <button class="log-btn btn-standby" onclick="toggleMedRef()">📖 OPEN MED-LIBRARY</button>
+            
+            <div id="med-library" class="hidden">
+                <label>REVERSIBLE CAUSES (H's & T's)</label>
+                <div class="table-wrap" style="font-size:0.7rem; padding:10px; display:grid; grid-template-columns:1fr 1fr;">
+                    <div>• Hypovolemia<br>• Hypoxia<br>• Hydrogen (Acid)<br>• Hypo/Hyperkalemia</div>
+                    <div>• Tension Pneumo<br>• Tamponade<br>• Toxins<br>• Thrombosis</div>
+                </div>
+                <label>BURN ASSESSMENT (RULE OF 9S)</label>
+                <div class="table-wrap" style="font-size:0.7rem; padding:10px; line-height:1.4">
+                    Head: 9% | Arms: 9% Each | Torso: 18% Front / 18% Back | Legs: 18% Each | Groin: 1%
+                </div>
+                <label>VITAL SIGNS (ADULT)</label>
+                <div class="table-wrap" style="font-size:0.7rem; padding:10px; line-height:1.4">
+                    HR: 60-100 bpm | RR: 12-20 bpm | BP: 120/80 | SpO2: >94% | MAP: >65
+                </div>
             </div>
 
             <label>START TRIAGE GUIDE</label>
@@ -156,7 +222,7 @@
 
         <div id="view-others" class="view-section hidden">
             <div class="table-wrap" style="padding:15px; border: 1px solid var(--info);">
-                <label style="color:var(--info)">DATA BACKUP (SAVE BEFORE UPDATING)</label>
+                <label style="color:var(--info)">DATA BACKUP</label>
                 <button class="log-btn btn-hq" onclick="exportData()">DOWNLOAD BACKUP (.JSON)</button>
                 <label>RESTORE DATA</label>
                 <input type="file" id="importFile" onchange="importData(event)">
@@ -201,23 +267,159 @@
 </div></div>
 
 <script>
+    // State management
     let opLogs = JSON.parse(localStorage.getItem('rv_op_logs')) || [];
     let crew = JSON.parse(localStorage.getItem('rv_crew')) || [{name: "JOHN DOE", callsign: "ALPHA-1", kit: ""}];
     let manualProtocols = JSON.parse(localStorage.getItem('rv_others')) || [];
     let gearLog = JSON.parse(localStorage.getItem('rv_gear')) || [];
+    let gcsValues = {eyes: 4, verbal: 5, motor: 6};
 
     window.addEventListener('load', () => {
-        setTimeout(() => document.getElementById('splash-screen').classList.add('splash-hidden'), 2000);
+        setTimeout(() => {
+            const splash = document.getElementById('splash-screen');
+            if(splash) splash.classList.add('splash-hidden');
+        }, 2000);
         render();
         renderMarch();
         if(window.innerWidth < 768) document.getElementById('ham-btn').style.display='block';
     });
 
+    // Navigation and UI
+    function nav(target) {
+        document.querySelectorAll('.view-section').forEach(v => v.classList.add('hidden'));
+        document.getElementById('view-' + target).classList.remove('hidden');
+        document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+        document.getElementById('nav-' + target).classList.add('active');
+        document.getElementById('view-title').innerText = target.replace('oplog', 'MISSION LOG').replace('medref', 'MEDICAL').toUpperCase();
+        if(window.innerWidth < 768) document.getElementById('sidebar').classList.remove('open');
+    }
+
+    function toggleNight() { document.body.classList.toggle('night-mode'); }
+    function toggleMenu() { document.getElementById('sidebar').classList.toggle('open'); }
+    function closeModals() { document.querySelectorAll('.modal').forEach(m => m.style.display = 'none'); }
+
+    // Logging Logic
+    function stamp(status) {
+        const time = new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+        opLogs.unshift({time, status});
+        localStorage.setItem('rv_op_logs', JSON.stringify(opLogs));
+        render();
+    }
+
+    function clearLogs() { if(confirm("Wipe logs?")) { opLogs=[]; render(); } }
+
+    // Medical Logic
     function setAVPU(val) {
-        document.querySelectorAll('.avpu-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('#view-medref .avpu-btn').forEach(b => {
+            if(b.parentElement.classList.contains('avpu-grid') && !b.id.includes('gcs')) {
+                b.classList.remove('active');
+            }
+        });
         const btnId = 'avpu-' + val.charAt(0).toLowerCase();
         document.getElementById(btnId).classList.add('active');
         document.getElementById('im-s').value = `AVPU: ${val}`;
+    }
+
+    function setGCS(type, val, el) {
+        gcsValues[type] = val;
+        el.parentElement.querySelectorAll('.avpu-btn').forEach(b => b.classList.remove('active'));
+        el.classList.add('active');
+        
+        const total = gcsValues.eyes + gcsValues.verbal + gcsValues.motor;
+        const display = document.getElementById('gcs-total');
+        const alertBox = document.getElementById('airway-alert');
+        
+        display.innerText = total;
+        display.classList.remove('gcs-warning', 'gcs-critical');
+        if(alertBox) alertBox.style.display = 'none';
+
+        if (total <= 8) {
+            display.classList.add('gcs-critical');
+            if(alertBox) alertBox.style.display = 'inline-block';
+        } else if (total >= 9 && total <= 11) {
+            display.classList.add('gcs-warning');
+        }
+
+        const signsInput = document.getElementById('im-s');
+        let currentVal = signsInput.value;
+        if (currentVal.includes('GCS:')) {
+            signsInput.value = currentVal.replace(/GCS: \d+/, `GCS: ${total}`);
+        } else {
+            signsInput.value = currentVal ? `GCS: ${total} | ${currentVal}` : `GCS: ${total}`;
+        }
+    }
+
+    function stampHandover() {
+        const gcs = document.getElementById('gcs-total').innerText;
+        const h = `HANDOVER: ID: ${document.getElementById('im-i').value} | MECH: ${document.getElementById('im-m').value} | GCS: ${gcs} | SIGNS: ${document.getElementById('im-s').value} | TX: ${document.getElementById('im-t').value}`;
+        stamp(h);
+    }
+
+    function toggleMedRef() {
+        const lib = document.getElementById('med-library');
+        lib.classList.toggle('hidden');
+        event.target.innerText = lib.classList.contains('hidden') ? '📖 OPEN MED-LIBRARY' : '📕 CLOSE MED-LIBRARY';
+    }
+
+    // Checklists & Renders
+    function renderChecklist(type) {
+        const lists = {
+            safetycheatsheet: ["FALL FACTOR: (Dist Fallen / Rope Length) | Limit: >0.2", "ANGLE LOADING: 120° Angle = 100% Load on EACH Anchor", "VITAL SIGNS (Adult): HR: 60-100 | RR: 12-20 | BP: 120/80"],
+            vertical: ["A - Anchors Tested", "R - Ropes Clear", "C - Connections Locked", "H - Harness/Helmet", "E - Energy Ready", "R - Redundancy"],
+            roadcrash: ["Power Isolate", "Stabilization", "Glass Mgmt", "Hydraulic Prep"],
+            hazmat: ["Wind Direction", "Exclusion Zone", "PPE Level"],
+            landzone: ["SIZE: 30m x 30m minimum", "SLOPE: Level ground (<10°)", "DEBRIS: Clear of loose gear", "SECURITY: Crowd control", "WIND: Direction identified", "OBSTACLES: Wires/Poles identified"]
+        };
+        document.getElementById('checklist-container').innerHTML = 
+            `<div style="padding:15px; color:var(--safety-orange); font-weight:bold;">${type.toUpperCase()}</div>` + 
+            lists[type].map(i => `<div style="padding:12px; border-top:1px solid #222;"><input type="checkbox"> ${i}</div>`).join('');
+    }
+
+    function renderMarch() {
+        const march = [
+            {l:"M", t:"HEMORRHAGE", c:"TQ High/Tight. Wound Packing."},
+            {l:"A", t:"AIRWAY", c:"Head Tilt/Chin Lift. NPA/OPA."},
+            {l:"R", t:"RESPIRATIONS", c:"Chest Seals. Needle Decompress."},
+            {l:"C", t:"CIRCULATION", c:"Radial Pulses. Fluid Resus."},
+            {l:"H", t:"HYPOTHERMIA", c:"Space Blankets. AVPU check."}
+        ];
+        document.getElementById('march-accordion').innerHTML = march.map(m => `
+            <div style="padding:12px; border-bottom:1px solid #222">
+                <div style="color:var(--safety-orange); font-weight:bold; font-size:0.8rem;">${m.l} - ${m.t}</div>
+                <div style="font-size:0.75rem; margin-top:5px; color:#aaa">${m.c}</div>
+            </div>`).join('');
+    }
+
+    // Squad Management
+    function addOperator() {
+        const name = prompt("Name:");
+        const callsign = prompt("Callsign:");
+        if(name || callsign) {
+            crew.push({name: (name || "").toUpperCase(), callsign: (callsign || "").toUpperCase(), kit:""});
+            render();
+        }
+    }
+
+    function updateOperatorField(index, field, value) {
+        crew[index][field] = value;
+        localStorage.setItem('rv_crew', JSON.stringify(crew));
+    }
+
+    // Tools
+    function calcMA() {
+        const w = document.getElementById('ma-input').value;
+        const r = document.getElementById('ma-ratio').value;
+        if(w) document.getElementById('ma-result').innerHTML = `Haul Force: ${(w/r).toFixed(1)}kg`;
+    }
+
+    function addGear() {
+        const name = document.getElementById('gear-name').value;
+        const date = document.getElementById('gear-date').value;
+        if(name) { 
+            gearLog.push({name, date}); 
+            localStorage.setItem('rv_gear', JSON.stringify(gearLog)); 
+            render(); 
+        }
     }
 
     function exportData() {
@@ -240,135 +442,35 @@
         const reader = new FileReader();
         reader.onload = (e) => {
             const data = JSON.parse(e.target.result);
-            if(confirm("Overwrite current data with this backup?")) {
+            if(confirm("Overwrite current data?")) {
                 opLogs = data.logs || []; crew = data.crew || [];
                 manualProtocols = data.others || []; gearLog = data.gear || [];
                 localStorage.setItem('rv_op_logs', JSON.stringify(opLogs));
                 localStorage.setItem('rv_crew', JSON.stringify(crew));
                 localStorage.setItem('rv_others', JSON.stringify(manualProtocols));
                 localStorage.setItem('rv_gear', JSON.stringify(gearLog));
-                if(data.smeacs) {
-                    document.getElementById('sm-s').value = data.smeacs.s || "";
-                    document.getElementById('sm-m').value = data.smeacs.m || "";
-                    document.getElementById('sm-e').value = data.smeacs.e || "";
-                    document.getElementById('sm-a').value = data.smeacs.a || "";
-                    document.getElementById('sm-c').value = data.smeacs.c || "";
-                    document.getElementById('sm-safety').value = data.smeacs.safety || "";
-                }
                 render();
+                location.reload();
             }
         };
         reader.readAsText(event.target.files[0]);
     }
 
-    function nav(target) {
-        document.querySelectorAll('.view-section').forEach(v => v.classList.add('hidden'));
-        document.getElementById('view-' + target).classList.remove('hidden');
-        document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-        document.getElementById('nav-' + target).classList.add('active');
-        if(window.innerWidth < 768) document.getElementById('sidebar').classList.remove('open');
-        render();
-    }
-
-    function toggleNight() { document.body.classList.toggle('night-mode'); }
-    function toggleMenu() { document.getElementById('sidebar').classList.toggle('open'); }
-    function closeModals() { document.querySelectorAll('.modal').forEach(m => m.style.display = 'none'); }
-
-    function stamp(status) {
-        const time = new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
-        opLogs.unshift({time, status});
-        localStorage.setItem('rv_op_logs', JSON.stringify(opLogs));
-        render();
-    }
-
-    function stampHandover() {
-        const h = `HANDOVER: ID: ${document.getElementById('im-i').value} | MECH: ${document.getElementById('im-m').value} | SIGNS: ${document.getElementById('im-s').value}`;
-        stamp(h);
-    }
-
-    function renderChecklist(type) {
-        const lists = {
-            safetycheatsheet: [
-                "FALL FACTOR: (Dist Fallen / Rope Length) | Limit: >0.2 = HIGH IMPACT",
-                "ANGLE LOADING: 120° Angle = 100% Load on EACH Anchor",
-                "VITAL SIGNS (Adult): HR: 60-100 | RR: 12-20 | BP: 120/80"
-            ],
-            vertical: ["A - Anchors Tested", "R - Ropes Clear", "C - Connections Locked", "H - Harness/Helmet", "E - Energy Ready", "R - Redundancy"],
-            roadcrash: ["Power Isolate", "Stabilization", "Glass Mgmt", "Hydraulic Prep"],
-            hazmat: ["Wind Direction", "Exclusion Zone", "PPE Level"],
-            landzone: [
-                "SIZE: 30m x 30m (100ft) minimum",
-                "SLOPE: Level ground (less than 5-10°)",
-                "DEBRIS: Clear of cones, loose gear, or plastic",
-                "SECURITY: Crowd control established",
-                "WIND: Direction identified for pilot",
-                "OBSTACLES: Wires/Poles identified"
-            ]
-        };
-        
-        document.getElementById('checklist-container').innerHTML = 
-            `<div style="padding:15px; color:var(--safety-orange); font-weight:bold;">${type.toUpperCase()}</div>` + 
-            lists[type].map(i => `<div style="padding:12px; border-top:1px solid #222;"><input type="checkbox"> ${i}</div>`).join('');
-    }
-
-    function renderMarch() {
-        const march = [
-            {l:"M", t:"HEMORRHAGE", c:"TQ High/Tight. Wound Packing."},
-            {l:"A", t:"AIRWAY", c:"Head Tilt/Chin Lift. NPA/OPA."},
-            {l:"R", t:"RESPIRATIONS", c:"Chest Seals. Needle Decompress."},
-            {l:"C", t:"CIRCULATION", c:"Radial Pulses. Fluid Resus."},
-            {l:"H", t:"HYPOTHERMIA", c:"Space Blankets. AVPU check."}
-        ];
-        document.getElementById('march-accordion').innerHTML = march.map(m => `
-            <div style="padding:12px; border-bottom:1px solid #222">
-                <div style="color:var(--safety-orange); font-weight:bold; font-size:0.8rem;">${m.l} - ${m.t}</div>
-                <div style="font-size:0.75rem; margin-top:5px; color:#aaa">${m.c}</div>
-            </div>`).join('');
-    }
-
-    function addOperator() {
-        const name = prompt("Name:");
-        const callsign = prompt("Callsign:");
-        if(name || callsign) {
-            crew.push({name: name.toUpperCase(), callsign: callsign.toUpperCase(), kit:""});
-            render();
-        }
-    }
-
-    function updateOperatorField(index, field, value) {
-        crew[index][field] = value;
-        localStorage.setItem('rv_crew', JSON.stringify(crew));
-    }
-
-    function calcMA() {
-        const w = document.getElementById('ma-input').value;
-        const r = document.getElementById('ma-ratio').value;
-        if(w) document.getElementById('ma-result').innerHTML = `Haul Force: ${(w/r).toFixed(1)}kg`;
-    }
-
-    function addGear() {
-        const name = document.getElementById('gear-name').value;
-        const date = document.getElementById('gear-date').value;
-        if(name) { gearLog.push({name, date}); localStorage.setItem('rv_gear', JSON.stringify(gearLog)); render(); }
-    }
-
     function render() {
         document.getElementById('op-log-body').innerHTML = opLogs.map(l => `<tr><td style="padding:10px; font-size:0.6rem; color:#666">${l.time}</td><td style="color:var(--safety-orange); font-weight:bold;">${l.status}</td></tr>`).join('');
-        
         document.getElementById('squad-list').innerHTML = crew.map((c, i) => `
             <div class="table-wrap" style="padding:15px;">
                 <div style="display:flex; justify-content:space-between; border-bottom: 1px solid #222; padding-bottom:5px; margin-bottom:5px;">
                     <strong style="color:var(--safety-orange)">OPERATOR ${i+1}</strong>
-                    <button class="btn-danger" style="padding:2px 10px; font-size:0.6rem" onclick="crew.splice(${i},1); render();">REMOVE</button>
+                    <button class="btn-danger" style="padding:2px 10px; font-size:0.6rem; cursor:pointer;" onclick="crew.splice(${i},1); render();">REMOVE</button>
                 </div>
                 <div style="display:flex; gap:10px;">
                     <div style="flex:1"><label>NAME</label><input type="text" oninput="updateOperatorField(${i}, 'name', this.value.toUpperCase())" value="${c.name || ''}"></div>
                     <div style="flex:1"><label>CALLSIGN</label><input type="text" oninput="updateOperatorField(${i}, 'callsign', this.value.toUpperCase())" value="${c.callsign || ''}"></div>
                 </div>
                 <label>KIT LIST</label>
-                <textarea oninput="updateOperatorField(${i}, 'kit', this.value)">${c.kit}</textarea>
+                <textarea oninput="updateOperatorField(${i}, 'kit', this.value)">${c.kit || ''}</textarea>
             </div>`).join('');
-
         document.getElementById('gear-list').innerHTML = gearLog.map(g => `<div>• ${g.name} (Exp: ${g.date})</div>`).join('');
         document.getElementById('others-container').innerHTML = manualProtocols.map(p => `<div class="table-wrap" style="padding:15px;"><strong>${p.title}</strong><br>${p.content}</div>`).join('');
     }
@@ -381,7 +483,6 @@
         localStorage.setItem('rv_others', JSON.stringify(manualProtocols));
         closeModals(); render();
     }
-    function clearLogs() { if(confirm("Wipe logs?")) { opLogs=[]; render(); } }
 </script>
 </body>
 </html>
