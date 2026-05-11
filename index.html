@@ -69,17 +69,20 @@
             border-radius: 3px; 
             margin-left: 10px;
         }
-        .gcs-warning { color: orange !important; }
-        .gcs-critical { 
-            color: #ff0000 !important; 
-            animation: flash-red 0.8s infinite; 
-            font-weight: 900;
+        .btn-large { 
+            transform: scale(1.1); 
+            margin: 15px 0;        
+            font-size: 1.1rem !important; 
+            height: 70px;          
         }
-        @keyframes flash-red {
-            0% { opacity: 1; }
-            50% { opacity: 0.3; }
-            100% { opacity: 1; }
-        }  
+        .hold-progress {
+            position: absolute; bottom: 0; left: 0; height: 4px; background: white; width: 0%; transition: width 2s linear;
+        }
+        .holding .hold-progress { width: 100%; }
+        .handover-progress {
+            position: absolute; bottom: 0; left: 0; height: 100%; background: rgba(255, 255, 255, 0.2); width: 0%; transition: width 1.5s linear; pointer-events: none;
+        }
+        .holding-handover .handover-progress { width: 100%; }
     </style>
 </head>
 <body>
@@ -92,9 +95,9 @@
     <div id="nav-oplog" class="nav-item active" onclick="nav('oplog')">⏱️ MISSION LOG</div>
     <div id="nav-smeacs" class="nav-item" onclick="nav('smeacs')">📋 SMEACS BRIEF</div>
     <div id="nav-checklists" class="nav-item" onclick="nav('checklists')">✅ CHECKLISTS</div>
-    <div id="nav-dash" class="nav-item" onclick="nav('dash')">👥 SQUAD & KITS</div>
     <div id="nav-medref" class="nav-item" onclick="nav('medref')">🏥 MEDICAL / IMIST</div>
-    <div id="nav-others" class="nav-item" onclick="nav('others')">📁 ALL OTHERS / MA</div>
+    <div id="nav-rigging" class="nav-item" onclick="nav('rigging')">⚙️ RIGGING</div>
+    <div id="nav-others" class="nav-item" onclick="nav('others')">📁 ALL OTHERS</div>
 </div>
 
 <div class="main">
@@ -103,13 +106,19 @@
 
     <div class="container">
         <div id="view-oplog" class="view-section">
-            <button class="log-btn btn-hq" onclick="stamp('DEPARTING HQ')">Departing HQ</button>
-            <button class="log-btn btn-scene" onclick="stamp('ON SCENE')">On Scene</button>
-            <button class="log-btn btn-scene" onclick="stamp('DEPARTING SCENE')">Departing Scene</button>
-            <button class="log-btn btn-standby" onclick="openHotDebrief()">Hot Debrief</button>
-            <button class="log-btn btn-hq" onclick="stamp('AT HQ / SHUTTING DOWN')">At HQ / SHUTTING down</button>
-            <div class="table-wrap"><table style="width:100%"><tbody id="op-log-body"></tbody></table></div>
-            <button class="log-btn btn-danger" onclick="clearLogs()">CLEAR LOG</button>
+            <button class="log-btn btn-hq btn-large" onclick="stampUnit('DEPARTING HQ')">Departing HQ</button>
+            <button class="log-btn btn-scene btn-large" onclick="stampUnit('ON SCENE')">On Scene</button>
+            <button class="log-btn btn-scene btn-large" onclick="stampUnit('DEPARTING SCENE')">Departing Scene</button>
+            <button class="log-btn btn-standby btn-large" onclick="openHotDebrief()">Hot Debrief</button>
+            <button class="log-btn btn-hq btn-large" onclick="stampUnit('AT HQ / SHUT DOWN')">At HQ / Shut Down</button>
+            
+            <div class="table-wrap">
+                <table style="width:100%"><tbody id="op-log-body"></tbody></table>
+            </div>
+            <button class="log-btn btn-danger" id="clear-btn" onmousedown="startHold()" onmouseup="endHold()">
+                CLEAR LOG (HOLD)
+                <div id="hold-bar" class="hold-progress"></div>
+            </button>
         </div>
 
         <div id="view-smeacs" class="view-section hidden">
@@ -123,8 +132,86 @@
                 <textarea id="sm-safety" placeholder="Safety/Alternates"></textarea>
             </div>
         </div>
+<div id="view-rigging" class="view-section hidden">
+    <div class="table-wrap" style="padding:15px;">
+        <h3 style="color:var(--safety-orange); margin-top:0;">Rigging & Force Analysis</h3>
+        
+        <label>System Type / MA</label>
+        <select id="rig-ma" onchange="computeRigging()">
+            <option value="1">1:1 (Direct Haul)</option>
+            <option value="2">2:1 (Mechanical Advantage)</option>
+            <option value="3" selected>3:1 (Z-Rig)</option>
+            <option value="5">5:1 (Complex)</option>
+            <option value="9">9:1 (Compound)</option>
+        </select>
 
-        <div id="view-checklists" class="view-section hidden">
+        <label>Load Weight (kg)</label>
+        <input id="rig-w" type="number" value="200" oninput="computeRigging()">
+
+        <div style="display:flex; gap:10px; margin-top:10px;">
+            <div style="flex:1">
+                <label>Rope Size</label>
+                <select id="rig-rope" onchange="computeRigging()">
+                    <option value="10.5">10.5mm</option>
+                    <option value="11" selected>11mm</option>
+                    <option value="12">12mm</option>
+                </select>
+            </div>
+            <div style="flex:1">
+                <label>Efficiency (%)</label>
+                <input id="rig-eff" type="number" value="90" oninput="computeRigging()">
+            </div>
+        </div>
+
+        <label>Angle Loading (Internal °)</label>
+        <input id="rig-angle" type="number" value="0" oninput="computeRigging()">
+        <p style="font-size:0.6rem; color:#888;">(Use 0° for vertical hauls, >0° for Highlines/Offsets)</p>
+
+        <div id="rig-results" style="margin-top:20px; padding:15px; background:#000; border-radius:8px; border-left:4px solid var(--info);">
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+                <div>
+                    <span style="font-size:0.6rem; color:#888;">THEORETICAL PULL</span>
+                    <p id="out-pull" style="margin:5px 0; font-weight:bold;">—</p>
+                </div>
+                <div>
+                    <span style="font-size:0.6rem; color:#888;">RESULTANT LOAD</span>
+                    <p id="out-resultant" style="margin:5px 0; font-weight:bold;">—</p>
+                </div>
+            </div>
+            <hr style="border:0; border-top:1px solid #333; margin:10px 0;">
+            <p id="status-rig" style="font-weight:bold; margin:0; text-align:center;">Status: Ready</p>
+        </div>
+        
+        <button class="log-btn btn-scene" style="margin-top:15px;" onclick="stampRigging()">STAMP RIGGING TO LOG</button>
+    </div>
+</div>
+        <div id="view-rigging" class="view-section hidden">
+            <div class="table-wrap" style="padding:15px;">
+                <h3 style="color:var(--safety-orange); margin-top:0;">Trackline Tension (kN)</h3>
+                <label>Load (kg)</label>
+                <input id="rig-w" type="number" value="150">
+                <label>Rope Size</label>
+                <select id="rig-rope">
+                    <option value="10.5">10.5mm</option>
+                    <option value="11" selected>11mm</option>
+                    <option value="12">12mm</option>
+                </select>
+                <div style="display:flex; gap:10px; margin-bottom:15px;">
+                    <div style="flex:1"><label>Left Angle (°)</label><input id="rig-angleL" type="number" value="60"></div>
+                    <div style="flex:1"><label>Right Angle (°)</label><input id="rig-angleR" type="number" value="60"></div>
+                </div>
+                <button class="log-btn btn-scene" onclick="computeRigging()">CALCULATE TENSION</button>
+
+                <div id="rig-results" style="margin-top:20px; padding:15px; background:#000; border-radius:8px; border-left:4px solid var(--info);">
+                    <p id="outT" style="margin:5px 0;">Tensions: —</p>
+                    <p id="outA" style="margin:5px 0;">Worst Anchor: —</p>
+                    <hr style="border:0; border-top:1px solid #333; margin:10px 0;">
+                    <p id="status-rig" style="font-weight:bold; margin:0;">Status: Ready</p>
+                </div>
+            </div>
+        </div>
+
+         <div id="view-checklists" class="view-section hidden">
             <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-bottom:15px;">
                 <button class="log-btn btn-hq" onclick="renderChecklist('vertical')">Vertical / ARCHER</button>
                 <button class="log-btn btn-hq" onclick="renderChecklist('roadcrash')">Road Crash</button>
@@ -135,162 +222,116 @@
             <div id="checklist-container" class="table-wrap"></div>
         </div>
 
-        <div id="view-dash" class="view-section hidden">
-            <button class="log-btn btn-scene" onclick="addOperator()">+ ADD OPERATOR</button>
-            <div id="squad-list"></div>
-        </div>
 
-        <div id="view-medref" class="view-section hidden">
-            <label>IMIST-AMBO HANDOVER</label>
-            <div class="table-wrap" style="padding:15px;">
-                <input type="text" id="im-i" placeholder="I - Identification">
-                <input type="text" id="im-m" placeholder="M - Mechanism">
-                <input type="text" id="im-inj" placeholder="I - Injuries">
-                
-                <label>AVPU STATUS</label>
-                <div class="avpu-grid">
-                    <div class="avpu-btn" id="avpu-a" onclick="setAVPU('ALERT')">A</div>
-                    <div class="avpu-btn" id="avpu-v" onclick="setAVPU('VOICE')">V</div>
-                    <div class="avpu-btn" id="avpu-p" onclick="setAVPU('PAIN')">P</div>
-                    <div class="avpu-btn" id="avpu-u" onclick="setAVPU('UNRESPONSIVE')">U</div>
-                </div>
-                <input type="text" id="im-s" placeholder="S - Signs (AVPU/Vitals)">
+  <div id="view-medref" class="view-section hidden">
+    <div class="table-wrap" style="padding:15px;">
+        <label>IMIST-AMBO HANDOVER</label>
+        <input type="text" id="im-i" placeholder="I - Identification (Age/Sex)">
+        <input type="text" id="im-m" placeholder="M - Mechanism / Medical">
+        <input type="text" id="im-inj" placeholder="I - Injuries / Information">
+        
+        <label>AVPU STATUS</label>
+        <div class="avpu-grid">
+            <div class="avpu-btn" id="avpu-a" onclick="setAVPU('ALERT')">A</div>
+            <div class="avpu-btn" id="avpu-v" onclick="setAVPU('VOICE')">V</div>
+            <div class="avpu-btn" id="avpu-p" onclick="setAVPU('PAIN')">P</div>
+            <div class="avpu-btn" id="avpu-u" onclick="setAVPU('UNRESPONSIVE')">U</div>
+        </div>
+        
+        <input type="text" id="im-s" placeholder="S - Signs (Vitals/AVPU/GCS)" style="margin-top:10px;">
+        <input type="text" id="im-t" placeholder="T - Treatment / Transport">
+<input type="text" id="im-s" placeholder="S - Signs (AVPU/Vitals)">
                 <input type="text" id="im-t" placeholder="T - Treatment">
                 <input type="text" id="im-a" placeholder="A - Allergies">
                 <input type="text" id="im-med" placeholder="M - Medications">
                 <input type="text" id="im-b" placeholder="B - Background">
                 <input type="text" id="im-o" placeholder="O - Other">
-                <button class="log-btn btn-hq" style="margin-top:10px;" onclick="stampHandover()">STAMP HANDOVER</button>
-            </div>
 
-            <label>GLASGOW COMA SCALE (GCS)</label>
-            <div class="table-wrap" style="padding:10px;">
-                <div style="font-size: 0.8rem; margin-bottom: 5px;">
-                    Total Score: <span id="gcs-total" style="color:var(--safety-orange); font-weight:bold;">15</span> 
-                    <span id="airway-alert">PROTECT AIRWAY</span>
-                </div>
-                <div class="avpu-grid" id="gcs-eyes">
-                    <div class="avpu-btn active" onclick="setGCS('eyes', 4, this)">E4</div>
-                    <div class="avpu-btn" onclick="setGCS('eyes', 3, this)">E3</div>
-                    <div class="avpu-btn" onclick="setGCS('eyes', 2, this)">E2</div>
-                    <div class="avpu-btn" onclick="setGCS('eyes', 1, this)">E1</div>
-                </div>
-                <div class="avpu-grid" style="margin-top:5px;" id="gcs-verbal">
-                    <div class="avpu-btn active" onclick="setGCS('verbal', 5, this)">V5</div>
-                    <div class="avpu-btn" onclick="setGCS('verbal', 4, this)">V4</div>
-                    <div class="avpu-btn" onclick="setGCS('verbal', 3, this)">V3</div>
-                    <div class="avpu-btn" onclick="setGCS('verbal', 2, this)">V2</div>
-                    <div class="avpu-btn" onclick="setGCS('verbal', 1, this)">V1</div>
-                </div>
-                <div class="avpu-grid" style="margin-top:5px;" id="gcs-motor">
-                    <div class="avpu-btn active" onclick="setGCS('motor', 6, this)">M6</div>
-                    <div class="avpu-btn" onclick="setGCS('motor', 5, this)">M5</div>
-                    <div class="avpu-btn" onclick="setGCS('motor', 4, this)">M4</div>
-                    <div class="avpu-btn" onclick="setGCS('motor', 3, this)">M3</div>
-                    <div class="avpu-btn" onclick="setGCS('motor', 2, this)">M2</div>
-                    <div class="avpu-btn" onclick="setGCS('motor', 1, this)">M1</div>
-                </div>
-            </div>
+        
+        <button class="log-btn btn-hq" id="handover-btn" style="margin-top:15px; position:relative;" onmousedown="startHandoverHold()" onmouseup="endHandoverHold()" ontouchstart="startHandoverHold()" ontouchend="endHandoverHold()">
+            HOLD TO STAMP HANDOVER
+            <div id="handover-bar" class="handover-progress"></div>
+        </button>
+    </div>
 
-            <button class="log-btn btn-standby" onclick="toggleMedRef()">📖 OPEN MED-LIBRARY</button>
-            
+    <label>GCS CALCULATOR <span id="airway-alert" style="display:none; color:red; background:white; padding:2px 5px; border-radius:3px; font-size:0.7rem; margin-left:10px;">⚠️ AIRWAY RISK</span></label>
+    <div class="table-wrap" style="padding:10px;">
+        <div style="font-size: 0.8rem; margin-bottom: 5px;">Total Score: <span id="gcs-total" style="color:var(--safety-orange); font-weight:bold;">15</span></div>
+        <div class="avpu-grid" id="gcs-eyes">
+            <div class="avpu-btn active" onclick="setGCS('eyes', 4, this)">E4</div>
+            <div class="avpu-btn" onclick="setGCS('eyes', 3, this)">E3</div>
+            <div class="avpu-btn" onclick="setGCS('eyes', 2, this)">E2</div>
+            <div class="avpu-btn" onclick="setGCS('eyes', 1, this)">E1</div>
+        </div>
+        <div class="avpu-grid" style="margin-top:5px;" id="gcs-verbal">
+            <div class="avpu-btn active" onclick="setGCS('verbal', 5, this)">V5</div>
+            <div class="avpu-btn" onclick="setGCS('verbal', 4, this)">V4</div>
+            <div class="avpu-btn" onclick="setGCS('verbal', 3, this)">V3</div>
+            <div class="avpu-btn" onclick="setGCS('verbal', 2, this)">V2</div>
+            <div class="avpu-btn" onclick="setGCS('verbal', 1, this)">V1</div>
+        </div>
+        <div class="avpu-grid" style="margin-top:5px;" id="gcs-motor">
+            <div class="avpu-btn active" onclick="setGCS('motor', 6, this)">M6</div>
+            <div class="avpu-btn" onclick="setGCS('motor', 5, this)">M5</div>
+            <div class="avpu-btn" onclick="setGCS('motor', 4, this)">M4</div>
+            <div class="avpu-btn" onclick="setGCS('motor', 3, this)">M3</div>
+            <div class="avpu-btn" onclick="setGCS('motor', 2, this)">M2</div>
+            <div class="avpu-btn" onclick="setGCS('motor', 1, this)">M1</div>
+        </div>
+    </div>
+
+    <button class="log-btn btn-standby" onclick="toggleMedRef(event)">📖 OPEN MED-LIBRARY</button>
             <div id="med-library" class="hidden">
-                <label>REVERSIBLE CAUSES (H's & T's)</label>
+               <label>REVERSIBLE CAUSES FOR CARDIAC ARREST(4H's & 4T's) </label>
                 <div class="table-wrap" style="font-size:0.7rem; padding:10px; display:grid; grid-template-columns:1fr 1fr;">
-                    <div>• Hypovolemia<br>• Hypoxia<br>• Hydrogen (Acid)<br>• Hypo/Hyperkalemia</div>
-                    <div>• Tension Pneumo<br>• Tamponade<br>• Toxins<br>• Thrombosis</div>
+                    <div>• Hypovolemia (low blood volume)<br>• Hypoxia (Low O<sup>2</sup>Supply) <br>• Hypo/Hyperthermia(Enviroment)<br>• Hypo/Hyperkalemia(Electrolytes -(K)pottassium intake / altered excret / trans cell shift) </div>
+                    <div>• Tension Pneumo ( continued collection of air in the pleural space)<br>• Tamponade -presence of blood or fluid in the pericardial space (the sac around the heart)<br>• Toxins (Overdose)<br>• Thrombosis (Dislodges Blood Clot in Cardiac Vessel)</div>
                 </div>
                 <label>BURN ASSESSMENT (RULE OF 9S)</label>
                 <div class="table-wrap" style="font-size:0.7rem; padding:10px; line-height:1.4">
                     Head: 9% | Arms: 9% Each | Torso: 18% Front / 18% Back | Legs: 18% Each | Groin: 1%
                 </div>
                 <label>VITAL SIGNS (ADULT)</label>
-                <div class="table-wrap" style="font-size:0.7rem; padding:10px; line-height:1.4">
-                    HR: 60-100 bpm | RR: 12-20 bpm | BP: 120/80 | SpO2: >94% | MAP: >65
-                </div>
+                <div class="table-wrap" style="font-size:0.7rem; padding:10px;">HR: 60-100 | RR: 12-20 | BP: 120/80 | SpO2: >94%</div>
             </div>
 
             <label>START TRIAGE GUIDE</label>
             <div class="triage-card" style="background:var(--success)">P3 - GREEN: Walking</div>
             <div class="triage-card" style="background:#FFD700">P2 - YELLOW: Delayed</div>
-            <div class="triage-card" style="background:var(--danger); color:white;">P1 - RED: Immediate (No Resp/Pulse)</div>
+            <div class="triage-card" style="background:var(--danger); color:white;">P1 - RED: Immediate</div>
             <div class="triage-card" style="background:black; color:white; border:1px solid #333;">BLACK: Deceased</div>
-            
-            <label>MARCH PROTOCOL</label>
             <div id="march-accordion" class="table-wrap"></div>
         </div>
 
-        <div id="view-others" class="view-section hidden">
-            <div class="table-wrap" style="padding:15px; border: 1px solid var(--info);">
-                <label style="color:var(--info)">DATA BACKUP</label>
-                <button class="log-btn btn-hq" onclick="exportData()">DOWNLOAD BACKUP (.JSON)</button>
-                <label>RESTORE DATA</label>
-                <input type="file" id="importFile" onchange="importData(event)">
-            </div>
-
-            <div class="table-wrap" style="padding:15px; margin-top:10px;">
-                <label>Mechanical Advantage Calc</label>
-                <div style="display:flex; gap:10px; margin-top:10px;">
-                    <input type="number" id="ma-input" placeholder="Weight (kg)">
-                    <select id="ma-ratio"><option value="3">3:1</option><option value="5">5:1</option><option value="9">9:1</option></select>
-                </div>
-                <button class="log-btn btn-hq" onclick="calcMA()">Calculate Force</button>
-                <div id="ma-result" style="margin-top:10px; color:var(--success)"></div>
-            </div>
-            
-            <label>GEAR RETIREMENT LOG</label>
-            <div class="table-wrap" style="padding:15px;">
-                <input type="text" id="gear-name" placeholder="Item Name">
-                <input type="date" id="gear-date">
-                <button class="log-btn btn-standby" onclick="addGear()">ADD GEAR ENTRY</button>
-                <div id="gear-list" style="margin-top:10px; font-size:0.8rem;"></div>
-            </div>
-            
-            <button class="log-btn btn-scene" onclick="openOtherModal()">+ MANUAL PROTOCOL</button>
-            <div id="others-container"></div>
-        </div>
-    </div>
-</div>
-
-<div id="otherModal" class="modal"><div class="modal-content">
-    <input type="text" id="other-title-input" placeholder="Title">
-    <textarea id="other-content-input" rows="8" placeholder="Steps..."></textarea>
-    <button class="log-btn btn-scene" onclick="saveOther()">SAVE</button>
-    <button class="log-btn btn-standby" onclick="closeModals()">CLOSE</button>
-</div></div>
 
 <div id="hotDebriefModal" class="modal"><div class="modal-content">
-    <h3 style="color:var(--danger)">HOT DEBRIEF</h3>
-    <textarea id="debrief-notes" placeholder="Notes..."></textarea>
+    <h3>HOT DEBRIEF</h3>
+    <textarea id="debrief-notes" rows="5"></textarea>
     <button class="log-btn btn-scene" onclick="submitDebrief()">LOG DEBRIEF</button>
     <button class="log-btn btn-standby" onclick="closeModals()">CLOSE</button>
 </div></div>
 
 <script>
-    // State management
     let opLogs = JSON.parse(localStorage.getItem('rv_op_logs')) || [];
-    let crew = JSON.parse(localStorage.getItem('rv_crew')) || [{name: "JOHN DOE", callsign: "ALPHA-1", kit: ""}];
     let manualProtocols = JSON.parse(localStorage.getItem('rv_others')) || [];
-    let gearLog = JSON.parse(localStorage.getItem('rv_gear')) || [];
     let gcsValues = {eyes: 4, verbal: 5, motor: 6};
+    const ropeDB = { "10.5": { wll: 25 }, "11": { wll: 30 }, "12": { wll: 40 } };
 
     window.addEventListener('load', () => {
         setTimeout(() => {
             const splash = document.getElementById('splash-screen');
             if(splash) splash.classList.add('splash-hidden');
-        }, 2000);
+        }, 1500);
         render();
         renderMarch();
         if(window.innerWidth < 768) document.getElementById('ham-btn').style.display='block';
     });
 
-    // Navigation and UI
     function nav(target) {
         document.querySelectorAll('.view-section').forEach(v => v.classList.add('hidden'));
         document.getElementById('view-' + target).classList.remove('hidden');
         document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
         document.getElementById('nav-' + target).classList.add('active');
-        document.getElementById('view-title').innerText = target.replace('oplog', 'MISSION LOG').replace('medref', 'MEDICAL').toUpperCase();
         if(window.innerWidth < 768) document.getElementById('sidebar').classList.remove('open');
     }
 
@@ -298,7 +339,6 @@
     function toggleMenu() { document.getElementById('sidebar').classList.toggle('open'); }
     function closeModals() { document.querySelectorAll('.modal').forEach(m => m.style.display = 'none'); }
 
-    // Logging Logic
     function stamp(status) {
         const time = new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
         opLogs.unshift({time, status});
@@ -306,182 +346,102 @@
         render();
     }
 
-    function clearLogs() { if(confirm("Wipe logs?")) { opLogs=[]; render(); } }
+    function stampUnit(msg) { stamp("UNIT: " + msg); }
 
-    // Medical Logic
-    function setAVPU(val) {
+    let holdTimer;
+    function startHold() { document.getElementById('clear-btn').classList.add('holding'); holdTimer = setTimeout(() => { if(confirm("Wipe logs?")) { opLogs=[]; localStorage.setItem('rv_op_logs', '[]'); render(); } }, 2000); }
+    function endHold() { document.getElementById('clear-btn').classList.remove('holding'); clearTimeout(holdTimer); }
+
+     function setAVPU(val) {
         document.querySelectorAll('#view-medref .avpu-btn').forEach(b => {
             if(b.parentElement.classList.contains('avpu-grid') && !b.id.includes('gcs')) {
                 b.classList.remove('active');
             }
         });
-        const btnId = 'avpu-' + val.charAt(0).toLowerCase();
-        document.getElementById(btnId).classList.add('active');
-        document.getElementById('im-s').value = `AVPU: ${val}`;
+        document.getElementById('avpu-' + val.charAt(0).toLowerCase()).classList.add('active');
+        const signsInput = document.getElementById('im-s');
+        signsInput.value = signsInput.value.includes('AVPU:') ? signsInput.value.replace(/AVPU: \w+/, `AVPU: ${val}`) : (signsInput.value ? `${signsInput.value} | AVPU: ${val}` : `AVPU: ${val}`);
     }
 
     function setGCS(type, val, el) {
         gcsValues[type] = val;
         el.parentElement.querySelectorAll('.avpu-btn').forEach(b => b.classList.remove('active'));
         el.classList.add('active');
-        
         const total = gcsValues.eyes + gcsValues.verbal + gcsValues.motor;
-        const display = document.getElementById('gcs-total');
-        const alertBox = document.getElementById('airway-alert');
-        
-        display.innerText = total;
-        display.classList.remove('gcs-warning', 'gcs-critical');
-        if(alertBox) alertBox.style.display = 'none';
-
-        if (total <= 8) {
-            display.classList.add('gcs-critical');
-            if(alertBox) alertBox.style.display = 'inline-block';
-        } else if (total >= 9 && total <= 11) {
-            display.classList.add('gcs-warning');
-        }
-
+        document.getElementById('gcs-total').innerText = total;
+        document.getElementById('airway-alert').style.display = total <= 8 ? 'inline-block' : 'none';
         const signsInput = document.getElementById('im-s');
-        let currentVal = signsInput.value;
-        if (currentVal.includes('GCS:')) {
-            signsInput.value = currentVal.replace(/GCS: \d+/, `GCS: ${total}`);
-        } else {
-            signsInput.value = currentVal ? `GCS: ${total} | ${currentVal}` : `GCS: ${total}`;
-        }
+        signsInput.value = signsInput.value.includes('GCS:') ? signsInput.value.replace(/GCS: \d+/, `GCS: ${total}`) : (signsInput.value ? `GCS: ${total} | ${signsInput.value}` : `GCS: ${total}`);
     }
 
-    function stampHandover() {
-        const gcs = document.getElementById('gcs-total').innerText;
-        const h = `HANDOVER: ID: ${document.getElementById('im-i').value} | MECH: ${document.getElementById('im-m').value} | GCS: ${gcs} | SIGNS: ${document.getElementById('im-s').value} | TX: ${document.getElementById('im-t').value}`;
-        stamp(h);
-    }
-
-    function toggleMedRef() {
+ function toggleMedRef(e) {
         const lib = document.getElementById('med-library');
         lib.classList.toggle('hidden');
-        event.target.innerText = lib.classList.contains('hidden') ? '📖 OPEN MED-LIBRARY' : '📕 CLOSE MED-LIBRARY';
+        e.target.innerText = lib.classList.contains('hidden') ? '📖 OPEN MED-LIBRARY' : '📕 CLOSE MED-LIBRARY';
     }
 
-    // Checklists & Renders
-    function renderChecklist(type) {
+    function computeRigging() {
+        const w = parseFloat(document.getElementById("rig-w").value);
+        const rope = ropeDB[document.getElementById("rig-rope").value];
+        const aL = parseFloat(document.getElementById("rig-angleL").value);
+        const aR = parseFloat(document.getElementById("rig-angleR").value);
+        if (!w || isNaN(aL)) return;
+
+        const WkN = (w * 9.81) / 1000;
+        const rL = aL * Math.PI / 180;
+        const rR = aR * Math.PI / 180;
+        const denom = (Math.cos(rL) * Math.sin(rR)) + (Math.cos(rR) * Math.sin(rL));
+
+        if (Math.abs(denom) < 0.05) { setRigStatus("INVALID GEOMETRY", "bad"); return; }
+        let TL = (WkN * Math.sin(rR)) / denom;
+        let TR = (WkN * Math.sin(rL)) / denom;
+        
+        document.getElementById("outT").innerText = `Left: ${(TL*1.5).toFixed(2)}kN | Right: ${(TR*1.5).toFixed(2)}kN`;
+        const ratio = Math.max(TL*1.5, TR*1.5) / rope.wll;
+        setRigStatus(ratio >= 1 ? "CRITICAL" : ratio >= 0.8 ? "CAUTION" : "SAFE", ratio >= 1 ? "bad" : ratio >= 0.8 ? "warn" : "good");
+    }
+
+    function setRigStatus(msg, lvl) { 
+        const el = document.getElementById("status-rig");
+        el.innerText = "Status: " + msg;
+        el.style.color = lvl === "bad" ? "var(--danger)" : lvl === "warn" ? "var(--safety-orange)" : "var(--success)";
+    }
+
+ function renderChecklist(type) {
         const lists = {
-            safetycheatsheet: ["FALL FACTOR: (Dist Fallen / Rope Length) | Limit: >0.2", "ANGLE LOADING: 120° Angle = 100% Load on EACH Anchor", "VITAL SIGNS (Adult): HR: 60-100 | RR: 12-20 | BP: 120/80"],
-            vertical: ["A - Anchors Tested", "R - Ropes Clear", "C - Connections Locked", "H - Harness/Helmet", "E - Energy Ready", "R - Redundancy"],
-            roadcrash: ["Power Isolate", "Stabilization", "Glass Mgmt", "Hydraulic Prep"],
+             vertical: ["## RIGGING: ARCHER", "A - Anchors Tested", "R - Ropes Clear", "C - Connections Locked", "H - Harness/Helmet", "E - Equipment Ready", "R - Rappel", "## PERSONAL: ABCDEF", "A - Anchors", "B - Buckles", "C - Connectors/Carabiners", "D - Devices- ID/Spark", "E - Everything Else", "F - Friend Check"],
+            roadcrash: ["## ARRIVAL CHECKS", "Inner / Outer check", "Hazards", "ICE / EV / HYB/ H", "Tool Dump", "Report to Crew Leader / Firecom", "## VEHICLE", "Power Isolate", "Stabilisation", "EV Plug", "Casualty Mgmt", "Extrication Plan", "## EXTRICATION", "Casualty prep", "Glass Mgmt", "Sharps Protection", "Hydraulic Prep/eDraulic prep", "## POST OP", "Return and account for all equipment", "Hot Debrief"],
             hazmat: ["Wind Direction", "Exclusion Zone", "PPE Level"],
-            landzone: ["SIZE: 30m x 30m minimum", "SLOPE: Level ground (<10°)", "DEBRIS: Clear of loose gear", "SECURITY: Crowd control", "WIND: Direction identified", "OBSTACLES: Wires/Poles identified"]
+            landzone: ["SIZE: 30m x 30m minimum / 4 X Rotor disc dia", "SLOPE: Level ground (<10°)", "DEBRIS: Clear of loose gear", "SECURITY: Crowd control", "WIND: Direction identified", "OBSTACLES: Wires / Poles identified", "FOD:Foreign Object damage to helo or ground crew from rotor wash" ],
+            safetycheatsheet: ["FALL FACTOR: (Dist Fallen / Rope Length)", "ANGLE LOADING: 120° Angle = 100% Load"]
         };
-        document.getElementById('checklist-container').innerHTML = 
-            `<div style="padding:15px; color:var(--safety-orange); font-weight:bold;">${type.toUpperCase()}</div>` + 
-            lists[type].map(i => `<div style="padding:12px; border-top:1px solid #222;"><input type="checkbox"> ${i}</div>`).join('');
+
+        const container = document.getElementById('checklist-container');
+        let html = `<div style="padding:15px; color:var(--safety-orange); font-weight:bold;">${type.toUpperCase()}</div>`;
+        html += lists[type].map(i => i.startsWith("##") ? `<div style="padding:8px 15px; background:#222; font-size:0.7rem;">${i.replace('## ', '')}</div>` : `<div style="padding:12px; border-top:1px solid #222;"><input type="checkbox" style="width:18px; margin-right:10px;">${i}</div>`).join('');
+        container.innerHTML = html;
+
+}
+     function renderMarch() {
+        const march = [{l:"M", t:"HEMORRHAGE"}, {l:"A", t:"AIRWAY"}, {l:"R", t:"RESPIRATIONS"}, {l:"C", t:"CIRCULATION"}, {l:"H", t:"HYPOTHERMIA"}];
+        document.getElementById('march-accordion').innerHTML = march.map(m => `<div style="padding:12px; border-bottom:1px solid #222"><div style="color:var(--safety-orange); font-weight:bold;">${m.l} - ${m.t}</div></div>`).join('');
     }
 
-    function renderMarch() {
-        const march = [
-            {l:"M", t:"HEMORRHAGE", c:"TQ High/Tight. Wound Packing."},
-            {l:"A", t:"AIRWAY", c:"Head Tilt/Chin Lift. NPA/OPA."},
-            {l:"R", t:"RESPIRATIONS", c:"Chest Seals. Needle Decompress."},
-            {l:"C", t:"CIRCULATION", c:"Radial Pulses. Fluid Resus."},
-            {l:"H", t:"HYPOTHERMIA", c:"Space Blankets. AVPU check."}
-        ];
-        document.getElementById('march-accordion').innerHTML = march.map(m => `
-            <div style="padding:12px; border-bottom:1px solid #222">
-                <div style="color:var(--safety-orange); font-weight:bold; font-size:0.8rem;">${m.l} - ${m.t}</div>
-                <div style="font-size:0.75rem; margin-top:5px; color:#aaa">${m.c}</div>
-            </div>`).join('');
-    }
-
-    // Squad Management
-    function addOperator() {
-        const name = prompt("Name:");
-        const callsign = prompt("Callsign:");
-        if(name || callsign) {
-            crew.push({name: (name || "").toUpperCase(), callsign: (callsign || "").toUpperCase(), kit:""});
-            render();
-        }
-    }
-
-    function updateOperatorField(index, field, value) {
-        crew[index][field] = value;
-        localStorage.setItem('rv_crew', JSON.stringify(crew));
-    }
-
-    // Tools
-    function calcMA() {
-        const w = document.getElementById('ma-input').value;
-        const r = document.getElementById('ma-ratio').value;
-        if(w) document.getElementById('ma-result').innerHTML = `Haul Force: ${(w/r).toFixed(1)}kg`;
-    }
-
-    function addGear() {
-        const name = document.getElementById('gear-name').value;
-        const date = document.getElementById('gear-date').value;
-        if(name) { 
-            gearLog.push({name, date}); 
-            localStorage.setItem('rv_gear', JSON.stringify(gearLog)); 
-            render(); 
-        }
-    }
-
-    function exportData() {
-        const data = {
-            logs: opLogs, crew, others: manualProtocols, gear: gearLog,
-            smeacs: {
-                s: document.getElementById('sm-s').value, m: document.getElementById('sm-m').value,
-                e: document.getElementById('sm-e').value, a: document.getElementById('sm-a').value,
-                c: document.getElementById('sm-c').value, safety: document.getElementById('sm-safety').value
-            }
-        };
-        const blob = new Blob([JSON.stringify(data)], {type: "application/json"});
-        const a = document.createElement('a');
-        a.href = URL.createObjectURL(blob);
-        a.download = `RescueBackup_${new Date().getTime()}.json`;
-        a.click();
-    }
-
-    function importData(event) {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            const data = JSON.parse(e.target.result);
-            if(confirm("Overwrite current data?")) {
-                opLogs = data.logs || []; crew = data.crew || [];
-                manualProtocols = data.others || []; gearLog = data.gear || [];
-                localStorage.setItem('rv_op_logs', JSON.stringify(opLogs));
-                localStorage.setItem('rv_crew', JSON.stringify(crew));
-                localStorage.setItem('rv_others', JSON.stringify(manualProtocols));
-                localStorage.setItem('rv_gear', JSON.stringify(gearLog));
-                render();
-                location.reload();
-            }
-        };
-        reader.readAsText(event.target.files[0]);
-    }
 
     function render() {
         document.getElementById('op-log-body').innerHTML = opLogs.map(l => `<tr><td style="padding:10px; font-size:0.6rem; color:#666">${l.time}</td><td style="color:var(--safety-orange); font-weight:bold;">${l.status}</td></tr>`).join('');
-        document.getElementById('squad-list').innerHTML = crew.map((c, i) => `
-            <div class="table-wrap" style="padding:15px;">
-                <div style="display:flex; justify-content:space-between; border-bottom: 1px solid #222; padding-bottom:5px; margin-bottom:5px;">
-                    <strong style="color:var(--safety-orange)">OPERATOR ${i+1}</strong>
-                    <button class="btn-danger" style="padding:2px 10px; font-size:0.6rem; cursor:pointer;" onclick="crew.splice(${i},1); render();">REMOVE</button>
-                </div>
-                <div style="display:flex; gap:10px;">
-                    <div style="flex:1"><label>NAME</label><input type="text" oninput="updateOperatorField(${i}, 'name', this.value.toUpperCase())" value="${c.name || ''}"></div>
-                    <div style="flex:1"><label>CALLSIGN</label><input type="text" oninput="updateOperatorField(${i}, 'callsign', this.value.toUpperCase())" value="${c.callsign || ''}"></div>
-                </div>
-                <label>KIT LIST</label>
-                <textarea oninput="updateOperatorField(${i}, 'kit', this.value)">${c.kit || ''}</textarea>
-            </div>`).join('');
-        document.getElementById('gear-list').innerHTML = gearLog.map(g => `<div>• ${g.name} (Exp: ${g.date})</div>`).join('');
-        document.getElementById('others-container').innerHTML = manualProtocols.map(p => `<div class="table-wrap" style="padding:15px;"><strong>${p.title}</strong><br>${p.content}</div>`).join('');
     }
 
     function openHotDebrief() { document.getElementById('hotDebriefModal').style.display = 'flex'; }
     function submitDebrief() { stamp("DEBRIEF: " + document.getElementById('debrief-notes').value); closeModals(); }
-    function openOtherModal() { document.getElementById('otherModal').style.display = 'flex'; }
-    function saveOther() {
-        manualProtocols.push({title: document.getElementById('other-title-input').value, content: document.getElementById('other-content-input').value});
-        localStorage.setItem('rv_others', JSON.stringify(manualProtocols));
-        closeModals(); render();
+
+    let handoverTimer;
+    function startHandoverHold() { document.getElementById('handover-btn').classList.add('holding-handover'); handoverTimer = setTimeout(() => { stamp("HANDOVER LOGGED"); endHandoverHold(); }, 1500); }
+    function endHandoverHold() { document.getElementById('handover-btn').classList.remove('holding-handover'); clearTimeout(handoverTimer); }
+    
+    function exportData() {
+        const blob = new Blob([JSON.stringify(opLogs)], {type: "application/json"});
+        const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `RescueBackup.json`; a.click();
     }
 </script>
 </body>
