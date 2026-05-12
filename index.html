@@ -115,10 +115,14 @@
             <div class="table-wrap">
                 <table style="width:100%"><tbody id="op-log-body"></tbody></table>
             </div>
-            <button class="log-btn btn-danger" id="clear-btn" onmousedown="startHold()" onmouseup="endHold()">
-                CLEAR LOG (HOLD)
-                <div id="hold-bar" class="hold-progress"></div>
-            </button>
+           <button class="log-btn btn-danger" id="clear-btn" 
+    onmousedown="startHold()" 
+    onmouseup="endHold()"
+    ontouchstart="startHold()" 
+    ontouchend="endHold()">
+    CLEAR LOG (HOLD)
+    <div id="hold-bar" class="hold-progress"></div>
+</button>
         </div>
 
         <div id="view-smeacs" class="view-section hidden">
