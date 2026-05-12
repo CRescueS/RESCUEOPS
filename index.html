@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>RescueLog Pro | Casino Rescue Squad</title>
+    <title>Rescue Ops | Casino Rescue Squad</title>
     <style>
         :root {
             --safety-orange: #FF6B00; --danger: #FF4444; --success: #00C851;
@@ -83,15 +83,31 @@
             position: absolute; bottom: 0; left: 0; height: 100%; background: rgba(255, 255, 255, 0.2); width: 0%; transition: width 1.5s linear; pointer-events: none;
         }
         .holding-handover .handover-progress { width: 100%; }
-    </style>
+   /* Add this within your <style> section */
+.splash-subtitle {
+    color: var(--safety-orange);
+    font-size: 1.2rem;
+    font-weight: 800;
+    letter-spacing: 2px;
+    margin-top: 10px;
+    text-transform: uppercase;
+}
+
+/* Ensure it turns red in night mode like the logo does */
+body.night-mode .splash-subtitle {
+    color: #ff0000;
+}
+ </style>
 </head>
 <body>
 
-<div id="splash-screen"><img src="1121.jpg" alt="Logo"></div>
-
+<div id="splash-screen">
+    <img src="1121.jpg" alt="Logo">
+    <div class="splash-subtitle">FIELD REFERENCE GUIDE</div>
+</div>
 <div id="sidebar" class="sidebar">
     <div class="sidebar-logo"><img src="1121.jpg" alt="Logo"></div>
-    <div class="nav-brand">CASINO RESCUE <span onclick="toggleNight()" style="cursor:pointer">👁️</span></div>
+    <div class="nav-brand">CASINO RESCUE REF <span onclick="toggleNight()" style="cursor:pointer">👁️</span></div>
     <div id="nav-oplog" class="nav-item active" onclick="nav('oplog')">⏱️ MISSION LOG</div>
     <div id="nav-smeacs" class="nav-item" onclick="nav('smeacs')">📋 SMEACS BRIEF</div>
     <div id="nav-checklists" class="nav-item" onclick="nav('checklists')">✅ CHECKLISTS</div>
