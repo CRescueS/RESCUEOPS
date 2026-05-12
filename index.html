@@ -140,10 +140,14 @@ body.night-mode .splash-subtitle {
             <div class="table-wrap">
                 <table style="width:100%"><tbody id="op-log-body"></tbody></table>
             </div>
-            <button class="log-btn btn-danger" id="clear-btn" onmousedown="startHold()" onmouseup="endHold()">
-                CLEAR LOG (HOLD)
-                <div id="hold-bar" class="hold-progress"></div>
-            </button>
+           <button class="log-btn btn-danger" id="clear-btn" 
+    onmousedown="startHold()" 
+    onmouseup="endHold()"
+    ontouchstart="startHold()" 
+    ontouchend="endHold()"
+    style="position: relative; overflow: hidden;"> CLEAR LOG (HOLD)
+    <div id="hold-bar" class="hold-progress"></div>
+</button>
         </div>
 
         <div id="view-smeacs" class="view-section hidden">
@@ -508,8 +512,20 @@ body.night-mode .splash-subtitle {
     function stampUnit(msg) { stamp("UNIT: " + msg); }
 
     let holdTimer;
-    function startHold() { document.getElementById('clear-btn').classList.add('holding'); holdTimer = setTimeout(() => { if(confirm("Wipe logs?")) { opLogs=[]; localStorage.setItem('rv_op_logs', '[]'); render(); } }, 2000); }
-    function endHold() { document.getElementById('clear-btn').classList.remove('holding'); clearTimeout(holdTimer); }
+    function startHold() { 
+    // This adds the 'holding' class to the BUTTON, which triggers the CSS transition
+    document.getElementById('clear-btn').classList.add('holding'); 
+    
+    holdTimer = setTimeout(() => { 
+        if(confirm("Wipe logs?")) { 
+            opLogs = []; 
+            localStorage.setItem('rv_op_logs', '[]'); 
+            render(); 
+        } 
+        // Reset visual state after confirmation
+        document.getElementById('clear-btn').classList.remove('holding');
+    }, 2000); 
+}
 
      function setAVPU(val) {
         document.querySelectorAll('#view-medref .avpu-btn').forEach(b => {
