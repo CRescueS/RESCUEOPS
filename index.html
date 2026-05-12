@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Rescue Ops | Casino Rescue Squad</title>
+    <title>RescueLog Pro | Casino Rescue Squad</title>
     <link rel="icon" type="image/jpeg" href="1121.jpg">
 
 <link rel="apple-touch-icon" href="1121.jpg">
@@ -90,7 +90,7 @@
             position: absolute; bottom: 0; left: 0; height: 100%; background: rgba(255, 255, 255, 0.2); width: 0%; transition: width 1.5s linear; pointer-events: none;
         }
         .holding-handover .handover-progress { width: 100%; }
-   /* Add this within your <style> section */
+/* Add this within your <style> section */
 .splash-subtitle {
     color: var(--safety-orange);
     font-size: 1.2rem;
@@ -103,7 +103,7 @@
 /* Ensure it turns red in night mode like the logo does */
 body.night-mode .splash-subtitle {
     color: #ff0000;
-}
+}   
  </style>
 </head>
 <body>
@@ -114,12 +114,14 @@ body.night-mode .splash-subtitle {
 </div>
 <div id="sidebar" class="sidebar">
     <div class="sidebar-logo"><img src="1121.jpg" alt="Logo"></div>
-    <div class="nav-brand">CASINO RESCUE REF <span onclick="toggleNight()" style="cursor:pointer">👁️</span></div>
+    <div class="nav-brand">CASINO RESCUE <span onclick="toggleNight()" style="cursor:pointer">👁️</span></div>
     <div id="nav-oplog" class="nav-item active" onclick="nav('oplog')">⏱️ MISSION LOG</div>
     <div id="nav-smeacs" class="nav-item" onclick="nav('smeacs')">📋 SMEACS BRIEF</div>
     <div id="nav-checklists" class="nav-item" onclick="nav('checklists')">✅ CHECKLISTS</div>
     <div id="nav-medref" class="nav-item" onclick="nav('medref')">🏥 MEDICAL / IMIST</div>
     <div id="nav-rigging" class="nav-item" onclick="nav('rigging')">⚙️ RIGGING</div>
+<div id="nav-usar" class="nav-item" onclick="nav('usar')">🏚️ USAR / STRUCTURE</div>
+<div id="nav-extrication" class="nav-item" onclick="nav('extrication')">🚗 VEHICLE EXTRICATION</div>
     <div id="nav-others" class="nav-item" onclick="nav('others')">📁 ALL OTHERS</div>
 </div>
 
@@ -138,14 +140,10 @@ body.night-mode .splash-subtitle {
             <div class="table-wrap">
                 <table style="width:100%"><tbody id="op-log-body"></tbody></table>
             </div>
-           <button class="log-btn btn-danger" id="clear-btn" 
-    onmousedown="startHold()" 
-    onmouseup="endHold()"
-    ontouchstart="startHold()" 
-    ontouchend="endHold()">
-    CLEAR LOG (HOLD)
-    <div id="hold-bar" class="hold-progress"></div>
-</button>
+            <button class="log-btn btn-danger" id="clear-btn" onmousedown="startHold()" onmouseup="endHold()">
+                CLEAR LOG (HOLD)
+                <div id="hold-bar" class="hold-progress"></div>
+            </button>
         </div>
 
         <div id="view-smeacs" class="view-section hidden">
@@ -270,20 +268,103 @@ body.night-mode .splash-subtitle {
                     <span style="color:var(--success)">FF < 0.5:</span> Low Impact<br>
                     <span style="color:var(--safety-orange)">FF 1.0:</span> Hard Fall<br>
                     <span style="color:var(--danger)">FF 2.0:</span> Extreme Risk (Collapse)
-                </div>
+
+              
+  </div>
             </div>
+        </div>
+<div id="view-usar" class="view-section hidden">
+    <div class="table-wrap" style="padding:15px;">
+        <h3 style="color:var(--safety-orange); margin-top:0;">FEMA SEARCH MARKING (THE "X")</h3>
+        <p style="font-size:0.7rem; color:#888; margin-bottom:15px;">Used to identify search status of a specific room or floor.</p>
+        
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+            <div style="background:#000; padding:10px; border:1px solid #333; border-radius:8px;">
+                <label style="margin-top:0;">LEFT QUADRANT</label>
+                <div style="font-size:0.8rem;">TEAM ID</div>
+                <div style="font-size:0.6rem; color:#666;">(e.g., CASINO RESCUE)</div>
+            </div>
+            <div style="background:#000; padding:10px; border:1px solid #333; border-radius:8px;">
+                <label style="margin-top:0;">TOP QUADRANT</label>
+                <div style="font-size:0.8rem;">DATE / TIME</div>
+                <div style="font-size:0.6rem; color:#666;">(Time of Exit)</div>
+            </div>
+            <div style="background:#000; padding:10px; border:1px solid #333; border-radius:8px;">
+                <label style="margin-top:0;">RIGHT QUADRANT</label>
+                <div style="font-size:0.8rem;">HAZARDS</div>
+                <div style="font-size:0.6rem; color:#666;">(e.g., GAS, LEANING)</div>
+            </div>
+            <div style="background:#000; padding:10px; border:1px solid #333; border-radius:8px;">
+                <label style="margin-top:0;">BOTTOM QUADRANT</label>
+                <div style="font-size:0.8rem;">VICTIMS FOUND</div>
+                <div style="font-size:0.6rem; color:#666;">(e.g., 2 LIVE / 1 DEAD)</div>
+            </div>
+        </div>
+    </div>
+
+    
+
+    <div class="table-wrap" style="padding:15px;">
+        <h3 style="color:var(--safety-orange); margin-top:0;">STRUCTURAL CONDITION (BOX)</h3>
+        <div style="font-size:0.75rem; line-height:1.6;">
+            <div style="margin-bottom:10px; border-bottom:1px solid #333; padding-bottom:5px;">
+                <strong style="color:var(--success);">EMPTY BOX:</strong> Relatively safe for Search & Rescue.
+            </div>
+            <div style="margin-bottom:10px; border-bottom:1px solid #333; padding-bottom:5px;">
+                <strong style="color:var(--safety-orange);">BOX WITH ( / ):</strong> Structure is significantly damaged. Some areas require shoring.
+            </div>
+            <div style="margin-bottom:10px; border-bottom:1px solid #333; padding-bottom:5px;">
+                <strong style="color:var(--danger);">BOX WITH ( X ):</strong> Structure is unsafe. Entry is restricted.
+            </div>
+            <div>
+                <strong style="color:var(--info);">ARROW OUTSIDE:</strong> Denotes safest point of entry.
+            </div>
+        </div>
+    </div>
+
+    <div class="table-wrap" style="padding:15px; border-left: 4px solid #fff;">
+        <h3 style="color:#fff; margin-top:0;">VICTIM MARKING</h3>
+        <div style="font-size:0.75rem; line-height:1.6;">
+            • <strong>Large "V":</strong> Victim confirmed in area.<br>
+            • <strong>"V" with Circle:</strong> Victim confirmed ALIVE.<br>
+            • <strong>"V" with Line ( / ):</strong> Victim confirmed DECEASED.<br>
+            • <strong>"V" with Cross ( X ):</strong> Victim REMOVED from area.
+        </div>
+    </div>
+</div>
+   <div id="view-extrication" class="view-section hidden">
+    <div class="table-wrap" style="padding:15px; border-left: 4px solid var(--safety-orange);">
+        <h3 style="color:var(--safety-orange); margin-top:0;">EV / HYBRID IDENTIFICATION</h3>
+        <p style="font-size:0.75rem; margin-bottom:10px;">Assume every vehicle is "Live" until 12V is disconnected and HV isolated.</p>
+        
+        <label>HIGH VOLTAGE CABLES (ORANGE)</label>
+        <div style="background:#000; padding:10px; border-radius:8px; font-size:0.7rem; border: 1px solid #333;">
+            • <strong>ORANGE:</strong> High Voltage (300V - 800V DC). <strong>DO NOT CUT.</strong><br>
+            • <strong>BLUE/YELLOW:</strong> Intermediate Voltage (36V - 42V). Handle with caution.<br>
+            • <strong>NOISE:</strong> Lack of engine noise DOES NOT mean the vehicle is off.
         </div>
 
-        <div id="view-checklists" class="view-section hidden">
-            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-bottom:15px;">
-                <button class="log-btn btn-hq" onclick="renderChecklist('vertical')">Vertical / ARCHER</button>
-                <button class="log-btn btn-hq" onclick="renderChecklist('roadcrash')">Road Crash</button>
-                <button class="log-btn btn-hq" onclick="renderChecklist('hazmat')">Hazmat</button>
-                <button class="log-btn btn-hq" onclick="renderChecklist('landzone')">Landing Zone</button>
-                <button class="log-btn btn-hq" style="grid-column: span 2;" onclick="renderChecklist('safetycheatsheet')">Safety Cheat Sheet</button>
-            </div>
-            <div id="checklist-container" class="table-wrap"></div>
+        <label>CRITICAL CUT ZONES & HAZARDS</label>
+        <div style="background:#000; padding:10px; border-radius:8px; font-size:0.7rem; border: 1px solid #333; line-height:1.4;">
+            • <strong>BATTERY FLOOR:</strong> Avoid floor-pan cuts; Li-ion cells are structural.<br>
+            • <strong>SRS INFLATORS:</strong> Typically in C-Pillars and Roof Rails. "Peel & See" before cutting.<br>
+            • <strong>UHSS/BORON:</strong> Pillars in EVs are often reinforced to protect the battery weight.
         </div>
+        <button class="log-btn btn-scene" style="margin-top:10px;" onclick="stamp('VEHICLE: EV/Hybrid Hazards Identified')">STAMP ID TO LOG</button>
+    </div>
+</div>
+
+<div id="view-checklists" class="view-section hidden">
+    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-bottom:15px;">
+        <button class="log-btn btn-hq" onclick="renderChecklist('vertical')">Vertical / ARCHER</button>
+        <button class="log-btn btn-hq" onclick="renderChecklist('roadcrash')">Road Crash</button>
+        <button class="log-btn btn-hq" onclick="renderChecklist('hazmat')">Hazmat</button>
+        <button class="log-btn btn-hq" onclick="renderChecklist('landzone')">Landing Zone</button>
+        <button class="log-btn btn-hq" style="grid-column: span 2;" onclick="renderChecklist('safetycheatsheet')">Safety Cheat Sheet</button>
+    </div>
+    <div id="checklist-container" class="table-wrap">
+        </div>
+</div>
 
         <div id="view-medref" class="view-section hidden">
             <div class="table-wrap" style="padding:15px;">
