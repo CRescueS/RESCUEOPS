@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>	
+<head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>RescueLog Pro | Casino Rescue Squad</title>
@@ -15,8 +15,6 @@
         :root {
             --safety-orange: #FF6B00; --danger: #FF4444; --success: #00C851;
             --info: #0099CC; --dark-bg: #0d0d0d; --card-bg: #1a1a1a; --text: #eee;
-  /* ADDED: Dispatcher Theme Variables */
-            --bg: #0b1220; --card: #121a2b; --red: #ff4d4d; --green: #00c853; --accent: #400;
         }
         body.night-mode { --safety-orange: #ff0000; --info: #aa0000; --success: #880000; --text: #ff0000; }
         body.night-mode .log-btn, body.night-mode .sidebar, body.night-mode .table-wrap, body.night-mode .avpu-btn { border: 1px solid #ff0000 !important; }
@@ -57,14 +55,7 @@
 
         textarea, input, select { width: 100%; background: #000; color: #fff; border: 1px solid #333; padding: 10px; border-radius: 4px; box-sizing: border-box; font-family: inherit; margin-top: 5px; }
         label { font-size: 0.65rem; font-weight: bold; color: var(--safety-orange); display: block; margin-top: 10px; text-transform: uppercase; }
-    /* ADDED: Grid Styles for Dispatcher */
-        .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; }
-        .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; }
-        .grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 5px; }
-        .grid-5 { display: grid; grid-template-columns: repeat(5, 1fr); gap: 5px; }
-        .dispatch-btn { background: var(--red); width: 100%; padding: 16px; margin-top: 15px; border-radius: 8px; border: 0; color: #fff; font-weight: bold; font-size: 16px; cursor: pointer; }
-        .incident { border-left: 5px solid var(--red); animation: slide 0.3s ease; margin-top: 10px; padding: 10px; background: var(--card); border-radius: 8px; }     
-
+        
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 2000; align-items: center; justify-content: center; padding: 20px; }
         .modal-content { background: #1a1a1a; padding: 20px; border-radius: 8px; border: 1px solid var(--safety-orange); width: 100%; max-width: 500px; max-height: 80vh; overflow-y: auto; }
         
@@ -124,7 +115,6 @@ body.night-mode .splash-subtitle {
 <div id="sidebar" class="sidebar">
     <div class="sidebar-logo"><img src="1121.jpg" alt="Logo"></div>
     <div class="nav-brand">CASINO RESCUE <span onclick="toggleNight()" style="cursor:pointer">👁️</span></div>
-<div id="nav-dispatch" class="nav-item" onclick="nav('dispatch')" style="color:var(--danger); font-weight:bold;">🚨 LIVE DISPATCH</div>
     <div id="nav-oplog" class="nav-item active" onclick="nav('oplog')">⏱️ MISSION LOG</div>
     <div id="nav-smeacs" class="nav-item" onclick="nav('smeacs')">📋 SMEACS BRIEF</div>
     <div id="nav-checklists" class="nav-item" onclick="nav('checklists')">✅ CHECKLISTS</div>
@@ -140,39 +130,6 @@ body.night-mode .splash-subtitle {
     <div class="header"><h2 id="view-title" style="margin:0; font-size:0.9rem; letter-spacing:1px;">MISSION LOG</h2></div>
 
     <div class="container">
-<div id="view-dispatch" class="view-section hidden">
-            <h3 style="color:var(--red); margin-bottom: 20px;">🚨 RescueLink DISPATCH</h3>
-            <div class="card" style="background: var(--card-bg); padding: 15px; border-radius: 12px; border: 1px solid #333;">
-                <label>SENDING UNIT</label>
-                <div class="grid-3">
-                    <button class="avpu-btn unit-btn" onclick="setUnit('RESCUE 1', this)">RESCUE 1</button>
-                    <button class="avpu-btn unit-btn" onclick="setUnit('RESCUE 2', this)">RESCUE 2</button>
-                    <button class="avpu-btn unit-btn" onclick="setUnit('RESCUE 3', this)">RESCUE 3</button>
-                </div>
-                <label>RESCUE TYPE</label>
-                <div class="grid-4">
-                    <button class="avpu-btn type-btn" onclick="setType('RCR', this)">RCR</button>
-                    <button class="avpu-btn type-btn" onclick="setType('GLR', this)">GLR</button>
-                    <button class="avpu-btn type-btn" onclick="setType('IDR', this)">IDR</button>
-                    <button class="avpu-btn type-btn" onclick="setType('VERT', this)">VERT</button>
-<button class="avpu-btn type-btn" onclick="setType('FR', this)">FR</button>
-<button class="avpu-btn type-btn" onclick="setType('AMBO', this)">AMBO</button>
-                </div>
-                <label>CASUALTIES</label>
-                <div class="grid-5">
-                    <button class="avpu-btn cas-btn" onclick="setCas('0', this)">0</button>
-                    <button class="avpu-btn cas-btn" onclick="setCas('1', this)">1</button>
-                    <button class="avpu-btn cas-btn" onclick="setCas('2', this)">2</button>
-                    <button class="avpu-btn cas-btn" onclick="setCas('3', this)">3</button>
-                    <button class="avpu-btn cas-btn" onclick="setCas('4+', this)">4+</button>
-                </div>
-                <label>SITREP / NOTES</label>
-                <input id="dispatch-notes" placeholder="Hazards, access info..." class="input">
-                <button class="dispatch-btn" onclick="sendToSupabase()">SEND LIVE DISPATCH</button>
-            </div>
-            <div id="feed"></div>
-        </div>
-
         <div id="view-oplog" class="view-section">
             <button class="log-btn btn-hq btn-large" onclick="stampUnit('DEPARTING HQ')">Departing HQ</button>
             <button class="log-btn btn-scene btn-large" onclick="stampUnit('ON SCENE')">On Scene</button>
@@ -518,12 +475,10 @@ body.night-mode .splash-subtitle {
 </div></div>
 
 <script>
-
     let opLogs = JSON.parse(localStorage.getItem('rv_op_logs')) || [];
     let manualProtocols = JSON.parse(localStorage.getItem('rv_others')) || [];
     let gcsValues = {eyes: 4, verbal: 5, motor: 6};
     const ropeDB = { "10.5": { wll: 25 }, "11": { wll: 30 }, "12": { wll: 40 } };
-
 
     window.addEventListener('load', () => {
         setTimeout(() => {
@@ -766,7 +721,7 @@ body.night-mode .splash-subtitle {
             tqInterval = setInterval(updateTQClock, 1000);
         } else {
             if(confirm("Confirm Tourniquet Release? This will stop the timer.")) {
-                clearInterval(tqInterval);	
+                clearInterval(tqInterval);
                 const elapsed = clock.innerText;
                 stamp(`TOURNIQUET RELEASED - Total Time: ${elapsed}`);
                 tqStartTime = null;
@@ -785,77 +740,6 @@ body.night-mode .splash-subtitle {
         const s = (diff % 60).toString().padStart(2, '0');
         document.getElementById('tq-clock').innerText = `${h}:${m}:${s}`;
     }
- /* ADDED: Supabase Configuration */
-    const SUPABASE_URL = 'https://jcctioskmhikksydvqdh.supabase.co/rest/v1/';
-    const SUPABASE_KEY = 'H1PbnuimlFDctd3Iw2m8mw_yiTezpwE'; 
-    const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
-
-
-    /* ADDED: Dispatcher Logic */
-    let selectedUnit = ""; let selectedType = ""; let selectedCas = "";
-
-    window.addEventListener('load', () => {
-        setTimeout(() => {
-            const splash = document.getElementById('splash-screen');
-            if(splash) splash.classList.add('splash-hidden');
-        }, 1500);
-        render();
-        if(window.innerWidth < 768) document.getElementById('ham-btn').style.display='block';
-
-        // Listen for new incidents
-        _supabase.channel('incidents-live').on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'incidents' }, payload => {
-            displayIncident(payload.new);
-        }).subscribe();
-    });
-
-    function setUnit(val, btn) { selectedUnit = val; clearActive('.unit-btn'); btn.classList.add('active'); }
-    function setType(val, btn) { selectedType = val; clearActive('.type-btn'); btn.classList.add('active'); }
-    function setCas(val, btn) { selectedCas = val; clearActive('.cas-btn'); btn.classList.add('active'); }
-    function clearActive(className) { document.querySelectorAll(className).forEach(b => b.classList.remove('active')); }
-
-    async function sendToSupabase() {
-        const notes = document.getElementById('dispatch-notes').value;
-        if (!selectedUnit || !selectedType) return alert("Select Unit and Rescue Type");
-        const { error } = await _supabase.from('incidents').insert([{ 
-            units: selectedUnit, type: selectedType, casualties: selectedCas, notes: notes, created_at: new Date() 
-        }]);
-        if (!error) {
-            stamp(`DISPATCH SENT: ${selectedUnit} - ${selectedType}`);
-            document.getElementById('dispatch-notes').value = '';
-            clearActive('.avpu-btn');
-            selectedUnit = ""; selectedType = ""; selectedCas = "";
-        }
-    }
-
-    function displayIncident(d) {
-        const div = document.createElement('div');
-        div.className = 'incident';
-        div.innerHTML = `<b>${d.type}</b> | ${d.units} <br><small>${new Date(d.created_at).toLocaleTimeString()}</small><br><i>${d.notes || ''}</i>`;
-        document.getElementById('feed').prepend(div);
-    }
-
-    /* Core Nav & Utility Functions */
-    function nav(target) {
-        document.querySelectorAll('.view-section').forEach(v => v.classList.add('hidden'));
-        document.getElementById('view-' + target).classList.remove('hidden');
-        document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-        document.getElementById('nav-' + target).classList.add('active');
-        document.getElementById('view-title').innerText = target.toUpperCase();
-        if(window.innerWidth < 768) document.getElementById('sidebar').classList.remove('open');
-    }
-
-    function stamp(status) {
-        const time = new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
-        opLogs.unshift({time, status});
-        localStorage.setItem('rv_op_logs', JSON.stringify(opLogs));
-        render();
-    }
-
-    function render() {
-        document.getElementById('op-log-body').innerHTML = opLogs.map(l => `<tr><td style="padding:10px; font-size:0.6rem; color:#666">${l.time}</td><td style="color:var(--safety-orange); font-weight:bold;">${l.status}</td></tr>`).join('');
-    }
-
 </script>
 </body>
 </html>
