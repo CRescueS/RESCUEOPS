@@ -230,12 +230,11 @@
       .subscribe();
 // Add this under your supabase initialization
 _supabase.channel('system_check')
-  .subscribe((status) => {
+  .subscribe((status, err) => {
     if (status === 'CHANNEL_ERROR') {
-      alert("Radio Connection Error: Check your internet or Supabase API keys.");
-    }
-    if (status === 'SUBSCRIBED') {
-      console.log("Radio is LIVE and connected.");
+      // This will tell you if it's a 401 (Wrong Key) or 404 (Wrong URL)
+      alert("Connection Error: " + status + ". Check the console for details.");
+      console.error(err);
     }
   });
     function renderLogs() {
