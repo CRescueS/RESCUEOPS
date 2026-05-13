@@ -235,7 +235,7 @@ _supabase.channel('system_check')
       // This will tell you if it's a 401 (Wrong Key) or 404 (Wrong URL)
       alert("Connection Error: " + status + ". Check the console for details.");
       console.error(err);
-    }
+     }
   });
     function renderLogs() {
         document.getElementById('log-body').innerHTML = opLogs.slice(0, 10).map(l => `
