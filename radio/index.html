@@ -228,7 +228,16 @@
           renderLogs();
       })
       .subscribe();
-
+// Add this under your supabase initialization
+_supabase.channel('system_check')
+  .subscribe((status) => {
+    if (status === 'CHANNEL_ERROR') {
+      alert("Radio Connection Error: Check your internet or Supabase API keys.");
+    }
+    if (status === 'SUBSCRIBED') {
+      console.log("Radio is LIVE and connected.");
+    }
+  });
     function renderLogs() {
         document.getElementById('log-body').innerHTML = opLogs.slice(0, 10).map(l => `
             <tr><td style="color:#8899ac; width:50px;">${l.time}</td><td>${l.status}</td></tr>
