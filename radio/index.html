@@ -32,6 +32,7 @@
 
         .log-table { width: 100%; border-collapse: collapse; font-size: 11px; }
         .log-table td { padding: 8px; border-bottom: 1px solid #1a2333; }
+        .note-btn { background: #24314d; color: var(--info); border: 1px solid var(--info); }
     </style>
 </head>
 <body>
@@ -73,7 +74,10 @@
             <button class="avpu-btn cas-btn" onclick="setCas('4+', this)">4+</button>
         </div>
 
-        <label>SITREP / NOTES</label>
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+            <label>SITREP / NOTES</label>
+            <button class="btn note-btn" style="width:auto; padding:2px 10px; margin-bottom:5px; font-size:10px;" onclick="sendOnlyNote()">SEND ONLY NOTE</button>
+        </div>
         <input id="other-info" placeholder="Specific hazards, access info..." class="input">
 
         <label style="margin-top: 20px; color: var(--text);">UNIT STATUS UPDATES</label>
@@ -105,22 +109,18 @@
     let selectedTrap = "";
     let selectedCas = "0";
     let opLogs = JSON.parse(localStorage.getItem('rv_op_logs')) || [];
-// --- NEW: ALERT TONE FUNCTION ---
+
     function playAlert() {
         const ctx = new (window.AudioContext || window.webkitAudioContext)();
         const osc = ctx.createOscillator();
         const gain = ctx.createGain();
-
         osc.type = 'sine';
-        osc.frequency.setValueAtTime(880, ctx.currentTime); // A5 note
+        osc.frequency.setValueAtTime(880, ctx.currentTime);
         osc.frequency.exponentialRampToValueAtTime(440, ctx.currentTime + 0.1); 
-
         gain.gain.setValueAtTime(0.1, ctx.currentTime);
         gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.2);
-
         osc.connect(gain);
         gain.connect(ctx.destination);
-
         osc.start();
         osc.stop(ctx.currentTime + 0.2);
     }
@@ -153,6 +153,23 @@
         btn.classList.add('active');
     }
 
+    async function sendOnlyNote() {
+        const notes = document.getElementById('other-info').value;
+        if (!selectedUnit) return alert("Select Unit First");
+        if (!notes) return alert("Enter a note first");
+
+        const entry = `${selectedUnit} (NOTE): ${notes}`;
+        saveLog(entry);
+
+        await _supabase.from('incidents').insert([{ 
+            units: selectedUnit, 
+            type: 'NOTE', 
+            notes: notes 
+        }]);
+
+        document.getElementById('other-info').value = "";
+    }
+
     async function broadcastStatus(msg) {
         if (!selectedUnit) return alert("Select Unit First");
         const entry = `${selectedUnit}: ${msg}`;
@@ -160,10 +177,13 @@
         await _supabase.from('incidents').insert([{ units: selectedUnit, type: 'STATUS', notes: msg }]);
     }
 
-    async function sendToSupabase() {
+   async function sendToSupabase() {
         if (!selectedUnit || !selectedType) return alert("Select Unit & Rescue Type");
         const notes = document.getElementById('other-info').value;
-        const entry = `${selectedUnit} | ${selectedType} | Cas: ${selectedCas}${selectedTrap ? ' | ' + selectedTrap : ''}`;
+        
+        let entry = `${selectedUnit} | ${selectedType} | Cas: ${selectedCas}${selectedTrap ? ' | ' + selectedTrap : ''}`;
+        if (notes) entry += ` | Notes: ${notes}`;
+
         saveLog(entry);
 
         const { error } = await _supabase.from('incidents').insert([{ 
@@ -176,37 +196,39 @@
 
         if (!error) {
             document.getElementById('other-info').value = "";
-            selectedType = ""; selectedTrap = "";
+            selectedType = ""; 
+            selectedTrap = "";
             document.querySelectorAll('.type-btn, .trap-btn').forEach(b => b.classList.remove('active'));
         }
     }
 
     function saveLog(msg) {
-        playAlert(); // Triggers tone on every new log entry
+        playAlert();
         const time = new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
         opLogs.unshift({time, status: msg});
         localStorage.setItem('rv_op_logs', JSON.stringify(opLogs));
         renderLogs();
     }
-// This tells the phone to listen for updates from OTHER team members
-const channel = _supabase
-  .channel('public:incidents')
-  .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'incidents' }, (payload) => {
-      // 1. Play the alert tone so the team hears the new message
-      playAlert(); 
-      
-      // 2. Format the message for the log
-      const newItem = payload.new;
-      const statusMsg = newItem.type === 'STATUS' 
-        ? `${newItem.units}: ${newItem.notes}` 
-        : `${newItem.units} | ${newItem.type} | Cas: ${newItem.casualties}`;
-      
-      // 3. Update the local UI immediately
-      const time = new Date(newItem.created_at).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
-      opLogs.unshift({time, status: statusMsg});
-      renderLogs();
-  })
-  .subscribe();
+
+    const channel = _supabase
+      .channel('public:incidents')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'incidents' }, (payload) => {
+          playAlert(); 
+          const newItem = payload.new;
+          
+          let statusMsg = "";
+          if (newItem.type === 'STATUS' || newItem.type === 'NOTE') {
+              statusMsg = `${newItem.units}: ${newItem.notes}`;
+          } else {
+              statusMsg = `${newItem.units} | ${newItem.type} | Cas: ${newItem.casualties}${newItem.notes ? ' | Notes: ' + newItem.notes : ''}`;
+          }
+          
+          const time = new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+          opLogs.unshift({time, status: statusMsg});
+          renderLogs();
+      })
+      .subscribe();
+
     function renderLogs() {
         document.getElementById('log-body').innerHTML = opLogs.slice(0, 10).map(l => `
             <tr><td style="color:#8899ac; width:50px;">${l.time}</td><td>${l.status}</td></tr>
